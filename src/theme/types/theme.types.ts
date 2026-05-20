@@ -2,6 +2,16 @@ export interface ColorPalette {
   appBackground: string;
   headerBackground: string;
   headerContent: string;
+
+  bottomTabBar: string;
+  bottomTabIcon: string;
+  bottomTabIconActive: string;
+  bottomTabIconBg: string;
+  cardBg: string;
+  cardBgVariant: string;
+  primary: string;
+  textPrimary: string;
+  textSecondary: string;
 }
 
 export interface TypographyScale {

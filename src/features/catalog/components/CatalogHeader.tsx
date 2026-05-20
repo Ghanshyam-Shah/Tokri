@@ -1,31 +1,35 @@
+// src/shared/components/headers/CatalogHeader.tsx
+
 import React, { useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  StatusBar,
-  Animated,
   Platform,
+  Animated,
+  StatusBar,
 } from 'react-native';
 
-import { DrawerActions, useNavigation } from '@react-navigation/native';
-
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
 
 import { useTheme } from '../../../app/providers/ThemeProvider';
 
-interface AppHeaderProps {
-  title?: string;
+const HEADER_H = Platform.OS === 'ios' ? 48 : 54;
+
+const H_PADDING = 16;
+
+interface CatalogHeaderProps {
+  title: string;
 }
 
-const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
+const CatalogHeader: React.FC<CatalogHeaderProps> = ({ title }) => {
   const navigation = useNavigation();
 
   const { theme, isDark, toggleTheme } = useTheme();
 
-  const { colors, borderRadius, shadows, fontFamilies, typography, spacing } =
-    theme;
+  const { colors, borderRadius, shadows, fontFamilies, typography } = theme;
 
   const drawerAnim = useRef(new Animated.Value(1)).current;
   const themeAnim = useRef(new Animated.Value(1)).current;
@@ -70,15 +74,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
 
       <View
         style={[
-          styles.container,
+          styles.header,
           {
             backgroundColor: colors.appBackground,
-            paddingHorizontal: spacing.lg,
             ...shadows.sm,
           },
         ]}
       >
-        {/* ══ LEFT — Drawer icon ══ */}
+        {/* LEFT — Drawer */}
         <Animated.View
           style={{
             transform: [{ scale: drawerAnim }],
@@ -94,21 +97,21 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
               right: 10,
             }}
             style={[
-              styles.iconBtn,
+              styles.headerIconBtn,
               {
                 borderRadius: borderRadius.sm,
               },
             ]}
           >
-            <Icon name="menu" size={26} color={colors.headerContent} />
+            <Icon name="menu" size={28} color={colors.headerContent} />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* ══ CENTER — Title ══ */}
+        {/* CENTER — Title */}
         <Text
           numberOfLines={1}
           style={[
-            styles.title,
+            styles.headerTitle,
             {
               color: colors.headerContent,
               fontFamily: fontFamilies.bold,
@@ -120,7 +123,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
           {title}
         </Text>
 
-        {/* ══ RIGHT — Theme toggle ══ */}
+        {/* RIGHT — Theme Toggle */}
         <Animated.View
           style={{
             transform: [{ scale: themeAnim }],
@@ -136,7 +139,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
               right: 10,
             }}
             style={[
-              styles.iconBtn,
+              styles.headerIconBtn,
               {
                 borderRadius: borderRadius.sm,
               },
@@ -144,7 +147,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
           >
             <Icon
               name={isDark ? 'white-balance-sunny' : 'weather-night'}
-              size={20}
+              size={22}
               color={isDark ? '#FCD34D' : '#818CF8'}
             />
           </TouchableOpacity>
@@ -154,29 +157,27 @@ const AppHeader: React.FC<AppHeaderProps> = ({ title = 'KiranaList' }) => {
   );
 };
 
-const HEADER_HEIGHT = Platform.OS === 'ios' ? 56 : 62;
-
 const styles = StyleSheet.create({
-  container: {
-    height: HEADER_HEIGHT,
+  header: {
+    height: HEADER_H,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    // borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: H_PADDING,
   },
 
-  iconBtn: {
-    width: 44,
-    height: 44,
+  headerIconBtn: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  title: {
+  headerTitle: {
     flex: 1,
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
 
-export default AppHeader;
+export default React.memo(CatalogHeader);
