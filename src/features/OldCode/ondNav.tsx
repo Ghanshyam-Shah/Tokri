@@ -5,42 +5,30 @@ import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import HomeStackNavigator from './stacks/HomeStackNavigator';
-import ListStackNavigator from './stacks/ListStackNavigator';
-import CatalogStackNavigator from './stacks/CatalogStackNavigator';
-import HistoryStackNavigator from './stacks/HistoryStackNavigator';
-import CreateStackNavigator from './stacks/CreateStackNavigator';
+// import HomeStackNavigator from './stacks/HomeStackNavigator';
+// import ListStackNavigator from './stacks/ListStackNavigator';
+// import CatalogStackNavigator from './stacks/CatalogStackNavigator';
+// import HistoryStackNavigator from './stacks/HistoryStackNavigator';
+// import CreateStackNavigator from './stacks/CreateStackNavigator';
 
-import { BottomTabParamList } from './types/navigationTypes';
+// import { BottomTabParamList } from './types/navigationTypes';
 
-// import { BottomTabParamList } from '../../navigation/types/navigationTypes';
-// import HomeStackNavigator from '../../navigation/stacks/HomeStackNavigator';
-// import ListStackNavigator from '../../navigation/stacks/ListStackNavigator';
-// import CreateStackNavigator from '../../navigation/stacks/CreateStackNavigator';
-// import CatalogStackNavigator from '../../navigation/stacks/CatalogStackNavigator';
-// import HistoryStackNavigator from '../../navigation/stacks/HistoryStackNavigator';
+import { BottomTabParamList } from '../../navigation/types/navigationTypes';
+import HomeStackNavigator from '../../navigation/stacks/HomeStackNavigator';
+import ListStackNavigator from '../../navigation/stacks/ListStackNavigator';
+import CreateStackNavigator from '../../navigation/stacks/CreateStackNavigator';
+import CatalogStackNavigator from '../../navigation/stacks/CatalogStackNavigator';
+import HistoryStackNavigator from '../../navigation/stacks/HistoryStackNavigator';
 
 // ─── Same DARK palette as CatalogScreen / NewListScreen ──────────────────────
 const DARK = {
-  bg: '#ffffffff',
-
-  surface: '#ffffffff',
-
-  surfaceHigh: '#F0F6FA',
-  border: '#DCE7EE',
-  primary: 'skyblue',
-  primaryMuted: '#EAF4FA',
-  textPrimary: '#263640',
-  textMuted: '#71818C',
-  chipBorder: '#D5E2E9',
-  searchBg: '#F3F7F9',
-  green: '#5FA77A',
-  red: '#D97878',
-  accent: '#8AA7B8',
+  bg: '#1c110b',
+  surface: '#251913',
+  border: '#3a2418',
+  primary: '#a78b7d',
+  textPrimary: '#f6ded3',
+  textMuted: '#a78b7d',
 };
-
-const TAB_BAR_H = Platform.OS === 'ios' ? 60 : 58;
-const FAB_SIZE = 40;
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
@@ -69,7 +57,7 @@ export default function BottomTabs() {
         tabBarInactiveTintColor: DARK.textMuted,
 
         tabBarStyle: {
-          height: TAB_BAR_H,
+          height: Platform.OS === 'ios' ? 60 : 58,
           backgroundColor: DARK.surface,
           borderTopWidth: 1,
           borderTopColor: DARK.border,
@@ -139,7 +127,7 @@ export default function BottomTabs() {
         options={{
           tabBarLabel: '',
           tabBarIcon: () => null,
-          tabBarButton: CustomAddButton,
+          tabBarButton: props => <CustomAddButton {...props} />,
         }}
       />
 
@@ -161,14 +149,14 @@ export default function BottomTabs() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   fabWrap: {
-    top: (TAB_BAR_H - FAB_SIZE) / 2,
+    // top: -16,
     alignItems: 'center',
     justifyContent: 'center',
   },
   fab: {
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
+    width: 52,
+    height: 52,
+    borderRadius: 27,
     // borderWidth: 3,
 
     borderColor: DARK.surface,

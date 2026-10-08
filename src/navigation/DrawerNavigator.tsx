@@ -44,7 +44,7 @@ const CustomDrawerContent = (props: any) => {
 const DrawerNavigator = () => {
   return (
     <Drawer.Navigator
-      drawerContent={props => <CustomDrawerContent {...props} />}
+      drawerContent={CustomDrawerContent}
       screenOptions={{
         headerShown: false,
         drawerActiveTintColor: '#6C6',

@@ -1,4 +1,10 @@
 export interface ColorPalette {
+  success: string;
+  error: string;
+  warning: string;
+  info: string;
+  textMuted: string;
+
   appBackground: string;
   headerBackground: string;
   headerContent: string;
@@ -89,3 +95,4 @@ export interface AppTheme {
   borderRadius: BorderRadiusScale;
   shadows: ShadowScale;
 }
+

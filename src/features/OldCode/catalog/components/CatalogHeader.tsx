@@ -1,36 +1,37 @@
+// src/shared/components/headers/CatalogHeader.tsx
+
 import React, { useRef } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  StatusBar,
-  Animated,
   Platform,
+  Animated,
+  StatusBar,
 } from 'react-native';
 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { DrawerActions, useNavigation } from '@react-navigation/native';
+
 import { useTheme } from '../../../app/providers/ThemeProvider';
 
-interface AppHeaderProps {
-  title?: string;
-  leftIcon: React.ComponentProps<typeof Icon>['name'];
-  onLeftPress: () => void;
-}
+const HEADER_H = Platform.OS === 'ios' ? 48 : 54;
 
-const HEADER_HEIGHT = Platform.OS === 'ios' ? 48 : 54;
 const H_PADDING = 16;
 
-const AppHeader: React.FC<AppHeaderProps> = ({
-  title = 'KiranaList',
-  leftIcon,
-  onLeftPress,
-}) => {
+interface CatalogHeaderProps {
+  title: string;
+}
+
+const CatalogHeader: React.FC<CatalogHeaderProps> = ({ title }) => {
+  const navigation = useNavigation();
+
   const { theme, isDark, toggleTheme } = useTheme();
 
   const { colors, borderRadius, shadows, fontFamilies, typography } = theme;
 
-  const leftAnim = useRef(new Animated.Value(1)).current;
+  const drawerAnim = useRef(new Animated.Value(1)).current;
   const themeAnim = useRef(new Animated.Value(1)).current;
 
   const springPress = (anim: Animated.Value) => {
@@ -41,6 +42,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
         speed: 60,
         bounciness: 4,
       }),
+
       Animated.spring(anim, {
         toValue: 1,
         useNativeDriver: true,
@@ -50,13 +52,15 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     ]).start();
   };
 
-  const handleLeftPress = () => {
-    springPress(leftAnim);
-    onLeftPress();
+  const handleDrawer = () => {
+    springPress(drawerAnim);
+
+    navigation.dispatch(DrawerActions.openDrawer());
   };
 
   const handleTheme = () => {
     springPress(themeAnim);
+
     toggleTheme();
   };
 
@@ -77,14 +81,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           },
         ]}
       >
-        {/* Left Icon */}
+        {/* LEFT — Drawer */}
         <Animated.View
           style={{
-            transform: [{ scale: leftAnim }],
+            transform: [{ scale: drawerAnim }],
           }}
         >
           <TouchableOpacity
-            onPress={handleLeftPress}
+            onPress={handleDrawer}
             activeOpacity={0.75}
             hitSlop={{
               top: 10,
@@ -93,21 +97,21 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               right: 10,
             }}
             style={[
-              styles.iconButton,
+              styles.headerIconBtn,
               {
                 borderRadius: borderRadius.sm,
               },
             ]}
           >
-            <Icon name={leftIcon} size={28} color={colors.headerContent} />
+            <Icon name="menu" size={28} color={colors.headerContent} />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Title */}
+        {/* CENTER — Title */}
         <Text
           numberOfLines={1}
           style={[
-            styles.title,
+            styles.headerTitle,
             {
               color: colors.headerContent,
               fontFamily: fontFamilies.bold,
@@ -119,7 +123,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           {title}
         </Text>
 
-        {/* Theme Toggle */}
+        {/* RIGHT — Theme Toggle */}
         <Animated.View
           style={{
             transform: [{ scale: themeAnim }],
@@ -135,7 +139,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               right: 10,
             }}
             style={[
-              styles.iconButton,
+              styles.headerIconBtn,
               {
                 borderRadius: borderRadius.sm,
               },
@@ -155,25 +159,25 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    height: HEADER_HEIGHT,
+    height: HEADER_H,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: H_PADDING,
   },
 
-  iconButton: {
+  headerIconBtn: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  title: {
+  headerTitle: {
     flex: 1,
     textAlign: 'center',
     fontWeight: '700',
   },
 });
 
-export default React.memo(AppHeader);
+export default React.memo(CatalogHeader);
