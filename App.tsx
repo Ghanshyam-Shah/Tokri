@@ -7,13 +7,17 @@ import { StatusBar } from 'react-native';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/app/providers/ThemeProvider';
 
+
 const AppContent = () => {
-  const { isDark } = useTheme();
+  const { theme, isDark } = useTheme();
 
   return (
     <>
-      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.appBackground}
+        translucent={false}
+      />
       <RootNavigator />
     </>
   );
