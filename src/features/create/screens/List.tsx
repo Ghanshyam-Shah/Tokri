@@ -826,9 +826,8 @@ const List: React.FC = () => {
   const buildPlainText = useCallback(() => {
     const lines = itemList.map((it, idx) => {
       const notePart = it.note ? `  (${it.note})` : '';
-      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${
-        it.unit
-      }${notePart}`;
+      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${it.unit
+        }${notePart}`;
     });
     return `🛒 ${listName}\n\n${lines.join('\n')}\n\nTotal items: ${itemCount}`;
   }, [itemList, listName, itemCount]);
@@ -866,16 +865,13 @@ const List: React.FC = () => {
           (it, idx) => `
         <tr>
           <td style="padding:8px;border-bottom:1px solid #eee;">${idx + 1}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.name} (${
-            it.nameHindi
-          })</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${it.name} (${it.nameHindi
+            })</td>
           <td style="padding:8px;border-bottom:1px solid #eee;">${it.unit}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${
-            it.quantity
-          }</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${
-            it.note ?? ''
-          }</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${it.quantity
+            }</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${it.note ?? ''
+            }</td>
         </tr>`,
         )
         .join('');
@@ -989,7 +985,8 @@ const List: React.FC = () => {
   return (
     <View style={s.root}>
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-        {/* ── Header: back + list name + receipt icon (count badge ke saath) ── */}
+
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
           title={listName}
           leftAction="back"

@@ -219,7 +219,7 @@ const AddItem: React.FC = () => {
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
           title="Add Item"
-          leftIcon="arrow-left"
+            leftAction="back"
           showThemeToggle={false}
           // onLeftPress={handleBack}
         />

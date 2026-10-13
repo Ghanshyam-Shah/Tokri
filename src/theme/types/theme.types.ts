@@ -4,7 +4,8 @@ export interface ColorPalette {
   warning: string;
   info: string;
   textMuted: string;
-
+  
+  border: string;   // <- new
   appBackground: string;
   headerBackground: string;
   headerContent: string;

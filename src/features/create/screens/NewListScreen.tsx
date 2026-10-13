@@ -157,7 +157,6 @@ const NewListScreen: React.FC = () => {
           leftIcon="menu"
         />
 
-
         {/* ── Scrollable Form ── */}
         <ScrollView
           style={styles.scroll}

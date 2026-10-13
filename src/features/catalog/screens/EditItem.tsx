@@ -388,13 +388,12 @@ const EditItem: React.FC = () => {
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
 
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-
         <AppHeader
           title="Add Item"
+            leftAction="back"
           showThemeToggle={false}
           rightIcon='trash-can-outline'
           onRightPress={handleDelete}
-          leftIcon="arrow-left"
           // onLeftPress={handleBack}
         />
 
