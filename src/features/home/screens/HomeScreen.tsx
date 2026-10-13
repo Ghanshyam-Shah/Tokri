@@ -30,8 +30,12 @@ const HomeScreen = () => {
         // justifyContent: 'center',
       }}
     >
-      <Text style={{ color: colors.textPrimary }}>Home</Text>
-    </SafeAreaView>
+{/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
+        <AppHeader
+          title="Add Item"
+          leftIcon="arrow-left"
+          showThemeToggle={false}
+        />    </SafeAreaView>
   );
 };
 

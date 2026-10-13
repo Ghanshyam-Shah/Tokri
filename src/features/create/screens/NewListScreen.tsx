@@ -149,13 +149,14 @@ const NewListScreen: React.FC = () => {
       <StatusBar barStyle="light-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        {/* ── Header — same as CatalogHeader style ── */}
 
+
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
-          title="Product Details"
-          leftIcon="arrow-left"
-          onLeftPress={() => navigation.goBack()}
+          title="New List"
+          leftIcon="menu"
         />
+
 
         {/* ── Scrollable Form ── */}
         <ScrollView

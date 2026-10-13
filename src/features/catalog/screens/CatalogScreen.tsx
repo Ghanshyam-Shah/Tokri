@@ -1,24 +1,14 @@
 // src/features/catalog/screens/CatalogScreen.tsx
 //
 // CATALOG MANAGEMENT SCREEN — this is NOT the shopping-list builder
-// (CreateListScreen). This screen is where the shop owner manages their
-// own product catalog: add a new product, edit an existing one, (remove
-// will live inside EditItem later). There is no "select items into a
-// list" concept here, so there's no card-selection state, no cart/receipt
-// icon, and no bottom Continue/Save/Share bar.
+// (CreateListScreen). Yahan shop owner apna product catalog manage karta hai:
+// naya product add, existing product edit. Koi selection / cart / bottom bar nahi.
 //
-// Visual system (theme, header layout, search bar, category chips,
-// collapsible-on-scroll behaviour, card shell styling) is ported 1:1 from
-// CreateListScreen so both screens look and feel identical. Because of
-// that, this file is self-contained just like CreateListScreen — it no
-// longer imports the separate CatalogHeader / SearchBar / CategoryChips /
-// ProductCard component files. Those files still exist and are untouched;
-// this screen just doesn't use them anymore. Delete or repurpose them
-// whenever you're ready — not touching them here since that wasn't asked.
+// Header: shared AppHeader (menu + title + "+" + theme toggle)
+// StatusBar: App.tsx ke ThemedStatusBar se control hota hai, yahan nahi.
 //
-// ⚠️ Both nav targets below are stubs — AddItem.tsx and EditItem.tsx don't
-// exist yet, so navigation.navigate(...) is cast `as never` to keep TS
-// happy until those routes are added to your stack's param list.
+// ⚠️ Nav targets stubs hain — AddItem.tsx / EditItem.tsx abhi exist nahi karte,
+// isliye navigate(...) ko `as any` cast kiya hai.
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
@@ -28,8 +18,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  StatusBar,
-  Platform,
   Image,
   Dimensions,
   ScrollView,
@@ -42,14 +30,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Product } from '../types/types';
-// import { Product } from '../catalog/types/types';
-
-// import { Product } from '../types/types';
-
+import AppHeader from '../../../shared/components/headers/AppHeader';
 // ═══════════════════════════════════════════════════════════════════
-// THEME SYSTEM — identical block to CreateListScreen. Swap ACTIVE_THEME
-// to preview each palette; keep this in sync with CreateListScreen /
-// List.tsx by hand until you extract it into a shared theme file.
+// THEME SYSTEM
 // ═══════════════════════════════════════════════════════════════════
 const THEMES = {
   ember: {
@@ -92,7 +75,6 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 12;
 const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
 const IMAGE_H = CARD_W * 0.82;
-const HEADER_H = Platform.OS === 'ios' ? 52 : 52;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Category {
@@ -211,8 +193,7 @@ const PRODUCTS: Product[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
-// Category Chips — same shrink-fix as CreateListScreen
-// (flexShrink:0 on the ScrollView + the chip, numberOfLines on the text)
+// Category Chips
 // ═══════════════════════════════════════════════════════════════════
 const CategoryChips = React.memo(
   ({
@@ -272,11 +253,7 @@ const ch = StyleSheet.create({
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// Product Card — catalog-management version:
-//   • no selection state, no add/tick overlay (nothing to "select" here)
-//   • bottom is a single full-width Edit button, and the button itself
-//     shows the product's default quantity/unit (e.g. "1kg", "500g")
-//     on its right side, per point 5.
+// Product Card — catalog-management version (Edit button + unit)
 // ═══════════════════════════════════════════════════════════════════
 const ProductCard = React.memo(
   ({ product, onEdit }: { product: Product; onEdit: (id: string) => void }) => (
@@ -301,7 +278,6 @@ const ProductCard = React.memo(
         <Text style={pc.hindi} numberOfLines={1}>
           {product.nameHindi}
         </Text>
-        {/* <Text style={pc.price}>₹{product.price.toFixed(2)}</Text> */}
 
         <TouchableOpacity
           onPress={() => onEdit(product.id)}
@@ -314,7 +290,6 @@ const ProductCard = React.memo(
             <Icon name="pencil-outline" size={15} color={DARK.primary} />
             <Text style={pc.editBtnTxt}>Edit</Text>
           </View>
-          {/* <Text style={pc.editBtnUnit}>{product.unit}</Text> */}
         </TouchableOpacity>
       </View>
     </View>
@@ -365,13 +340,6 @@ const pc = StyleSheet.create({
     letterSpacing: 0.1,
   },
   hindi: { fontSize: 11, color: DARK.textMuted, marginBottom: 8 },
-  price: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    marginTop: 2,
-    marginBottom: 8,
-  },
   editBtn: {
     width: '100%',
     flexDirection: 'row',
@@ -422,20 +390,18 @@ const CatalogScreen: React.FC = () => {
     });
   }, [selectedCategory, searchQuery]);
 
-  const handleMenu = useCallback(() => {
-    navigation.dispatch(DrawerActions.openDrawer());
-  }, [navigation]);
+ 
 
-  // point 3: header "+" opens AddItem.tsx (not designed yet)
+  // header "+" → AddItem screen
   const handleAddProduct = useCallback(() => {
-    // TODO: AddItem screen not built yet — wire this up once it exists
+    // TODO: AddItem screen banne ke baad wire karna
     (navigation as any).navigate('AddItem');
   }, [navigation]);
 
-  // point 4: card "Edit" opens EditItem.tsx (not designed yet)
+  // card "Edit" → EditItem screen
   const handleEditProduct = useCallback(
     (id: string) => {
-      // TODO: EditItem screen not built yet — wire this up once it exists
+      // TODO: EditItem screen banne ke baad wire karna
       (navigation as any).navigate('EditItem', { productId: id });
     },
     [navigation],
@@ -450,7 +416,7 @@ const CatalogScreen: React.FC = () => {
 
   const keyExtractor = useCallback((item: Product) => item.id, []);
 
-  // ═══ collapsible search + chips bar — same behaviour as CreateListScreen ═══
+  // ═══ collapsible search + chips bar ═══
   const [barHeight, setBarHeight] = useState(116);
   const barTranslateY = useRef(new Animated.Value(0)).current;
   const barHidden = useRef(false);
@@ -496,39 +462,17 @@ const CatalogScreen: React.FC = () => {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
-
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-        {/* ── Header: menu (left) + title + add-product (right) ── */}
-        <View style={s.header}>
-          <TouchableOpacity
-            onPress={handleMenu}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Icon name="menu" size={24} color={DARK.textPrimary} />
-          </TouchableOpacity>
-
-          <View style={s.headerCenter}>
-            <Text style={s.headerTitle} numberOfLines={1}>
-              Catalog
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={handleAddProduct}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Icon
-              name="plus-circle-outline"
-              size={24}
-              color={DARK.textPrimary}
-            />
-          </TouchableOpacity>
-        </View>
+        
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
+        <AppHeader
+          title="Catalog"
+          leftIcon="menu"
+          showThemeToggle={false}
+          rightIcon="plus-circle-outline"
+          onRightPress={handleAddProduct}
+          // showThemeToggle={false}   // theme toggle nahi chahiye to uncomment karo
+        />
 
         {/* ── Body: collapsible search/chips overlay + product grid ── */}
         <View style={{ flex: 1 }}>
@@ -600,31 +544,6 @@ const CatalogScreen: React.FC = () => {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: DARK.bg },
   safeArea: { flex: 1, backgroundColor: DARK.bg },
-
-  header: {
-    height: HEADER_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: H_PADDING,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: DARK.border,
-    zIndex: 20,
-    backgroundColor: DARK.bg,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    letterSpacing: 0.2,
-  },
 
   collapsibleBar: {
     position: 'absolute',

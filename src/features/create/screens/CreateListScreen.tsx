@@ -38,6 +38,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { CreateStackParamList } from '../../../navigation/types/navigationTypes';
+import AppHeader from '../../../shared/components/headers/AppHeader';
 // import { CreateStackParamList } from '../../navigation/types/navigationTypes';
 // import { CreateStackParamList } from '../../../navigation/types/navigationTypes';
 // import AppHeader from '../../../shared/components/headers/AppHeader';
@@ -1174,7 +1175,7 @@ const TempCreateListScreen: React.FC = () => {
         'List save nahi hui',
         'Aap is list ko chhod ke jaana chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Cancel', style: 'cancel', onPress: () => { } },
           {
             text: 'Discard',
             style: 'destructive',
@@ -1377,47 +1378,19 @@ const TempCreateListScreen: React.FC = () => {
 
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
         {/* ── Header: title only + cart-style preview icon ── */}
-        <View style={s.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Icon name="arrow-left" size={24} color={DARK.textPrimary} />
-          </TouchableOpacity>
+      
 
-          <View style={s.headerCenter}>
-            <Text style={s.headerTitle} numberOfLines={1}>
-              {listName}
-            </Text>
-          </View>
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
 
-          <TouchableOpacity
-            onPress={() => setPreviewVisible(true)}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Ionicons
-              name="receipt-outline"
-              size={20}
-              color={DARK.textPrimary}
-            />
-            {selectedCount > 0 && (
-              <View style={s.cartBadge}>
-                <Text style={s.cartBadgeTxt}>
-                  {selectedCount > 99 ? '99+' : selectedCount}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        {/* <AppHeader
-          title="Product Details"
-          leftIcon="menu"
-          onLeftPress={() => navigation.dispatch(DrawerActions.openDrawer())}
-        /> */}
+        <AppHeader
+          title={listName}
+          leftAction="back"
+          rightIcon="receipt-outline"
+          rightIconSet="ionicons"
+          onRightPress={() => setPreviewVisible(true)}
+          rightBadge={selectedCount}
+          showThemeToggle={false}
+        />
         {/* ── Body: collapsible search/chips overlay + product grid ── */}
         <View style={{ flex: 1 }}>
           <Animated.View

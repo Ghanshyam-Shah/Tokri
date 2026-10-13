@@ -15,6 +15,9 @@
 // This screen falls back to DEFAULT_ITEMS if nothing is passed, just so it
 // doesn't crash while you wire that up.
 //
+// Header: shared AppHeader (back + list name + receipt icon with count badge)
+// StatusBar: App.tsx ke ThemedStatusBar se control hota hai, yahan nahi.
+//
 // 🔎 Search + category chips were ported over from CreateListScreen (same
 // components, same collapsible-on-scroll behaviour) so you can filter the
 // final list before exporting/sharing it. They live OUTSIDE the ViewShot
@@ -28,7 +31,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  StatusBar,
   Platform,
   Alert,
   Image,
@@ -44,16 +46,11 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  RouteProp,
-  useNavigation,
-  useRoute,
-  useFocusEffect,
-} from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RouteProp, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import AppHeader from '../../../shared/components/headers/AppHeader';
+
 // Optional native modules — comment these two lines out if not installed yet,
 // the screen still works minus Save-as-Image / Save-as-PDF.
 import ViewShot from 'react-native-view-shot';
@@ -69,13 +66,11 @@ import { generatePDF } from 'react-native-html-to-pdf';
 //     List: { listId?: string; listName?: string; items?: SelectedP[] };
 //   };
 //
-// Until then, this local param type keeps the screen self-contained and
-// type-safe without depending on that file.
+// Until then, this local param type keeps the screen self-contained.
 type ListStackParamList = {
   List: { listId?: string; listName?: string; items?: SelectedP[] };
 };
 type RouteProps = RouteProp<ListStackParamList, 'List'>;
-type NavProp = NativeStackNavigationProp<ListStackParamList, 'List'>;
 
 // ═══════════════════════════════════════════════════════════════════
 // THEME — kept identical to CreateListScreen so both screens match.
@@ -104,7 +99,6 @@ const ACTIVE_THEME: keyof typeof THEMES = 'skySlate';
 const DARK = THEMES[ACTIVE_THEME];
 
 const H_PADDING = 16;
-const HEADER_H = Platform.OS === 'ios' ? 52 : 52;
 const BOTTOM_BAR_H = 92;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -137,8 +131,7 @@ const CATEGORIES: Category[] = [
 // ─── Default / fallback items ──────────────────────────────────────────────
 // Used ONLY when this screen is opened without real `route.params.items`
 // (e.g. testing List.tsx directly, or before you've wired up navigation from
-// CreateListScreen). Once real params flow in, this is ignored automatically
-// — see `initialItems` below. Safe to delete once navigation is wired up.
+// CreateListScreen). Safe to delete once navigation is wired up.
 const DEFAULT_ITEMS: SelectedP[] = [
   {
     id: '1',
@@ -225,9 +218,8 @@ const DEFAULT_ITEMS: SelectedP[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
-// Category Chips — ported from CreateListScreen as-is (same fix for the
-// shrinking-chip bug: flexShrink:0 on the ScrollView + the chip itself,
-// numberOfLines={1} on the text).
+// Category Chips — ported from CreateListScreen as-is (flexShrink:0 on the
+// ScrollView + the chip itself, numberOfLines={1} on the text).
 // ═══════════════════════════════════════════════════════════════════
 const CategoryChips = React.memo(
   ({
@@ -333,15 +325,8 @@ const ListRow = React.memo(
             style={row.editBtn}
           >
             <Icon name="pencil-outline" size={14} color={DARK.primary} />
-            {/* <Text style={row.editTxt}>Edit</Text> */}
           </TouchableOpacity>
         </View>
-        {/* <View style={row.bottomRow}>
-                <TouchableOpacity onPress={() => onEdit(item.id)} activeOpacity={0.8} style={row.editBtn}>
-                    <Icon name="pencil-outline" size={14} color={DARK.primary} />
-                    <Text style={row.editTxt}>Edit</Text>
-                </TouchableOpacity>
-            </View> */}
       </View>
     </View>
   ),
@@ -751,7 +736,6 @@ const xb = StyleSheet.create({
 // ═══════════════════════════════════════════════════════════════════
 const List: React.FC = () => {
   const route = useRoute<RouteProps>();
-  const navigation = useNavigation<NavProp>();
 
   const listName = route.params?.listName ?? 'Meri List';
   const initialItems: SelectedP[] = route.params?.items ?? DEFAULT_ITEMS;
@@ -761,16 +745,16 @@ const List: React.FC = () => {
   );
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // header receipt icon ka state. Abhi is screen me preview modal render nahi
+  // hota, to icon dabane par kuch dikhega nahi (neeche handleOpenPreview dekho).
+  const [previewVisible, setPreviewVisible] = useState(false);
+
   // ── search + category filter state (ported from CreateListScreen) ──
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const itemList = useMemo(() => Object.values(items), [items]);
   const itemCount = itemList.length;
-  const totalQty = useMemo(
-    () => itemList.reduce((sum, i) => sum + i.quantity, 0),
-    [itemList],
-  );
 
   // what's actually rendered / exported — filtered by search + category
   const filteredItems = useMemo(() => {
@@ -785,14 +769,6 @@ const List: React.FC = () => {
   }, [itemList, selectedCategory, searchQuery]);
 
   const captureRef = useRef<React.ComponentRef<typeof ViewShot>>(null);
-
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     const parent = navigation.getParent();
-  //     parent?.setOptions({ tabBarStyle: { display: 'none' } });
-  //     return () => parent?.setOptions({ tabBarStyle: undefined });
-  //   }, [navigation]),
-  // );
 
   // ── item handlers ──
   const handleDelete = useCallback((id: string) => {
@@ -830,7 +806,7 @@ const List: React.FC = () => {
     [editingId],
   );
 
-  // Remove button lives inside the edit modal now — closes the sheet and
+  // Remove button lives inside the edit modal — closes the sheet and
   // reuses the same confirm dialog as before.
   const handleEditRemove = useCallback(() => {
     if (!editingId) return;
@@ -838,6 +814,10 @@ const List: React.FC = () => {
     setEditingId(null);
     handleDelete(id);
   }, [editingId, handleDelete]);
+
+  // header receipt icon
+  // TODO: yahan preview modal / koi action wire karna hai. Abhi sirf state set hota hai.
+  const handleOpenPreview = useCallback(() => setPreviewVisible(true), []);
 
   // ── export handlers ──
   // NOTE: exports use the FULL list (itemList), not the filtered/search
@@ -953,8 +933,6 @@ const List: React.FC = () => {
     }
   }, [itemCount]);
 
-  const handleBack = useCallback(() => navigation.goBack(), [navigation]);
-
   const renderItem = useCallback(
     ({ item }: { item: SelectedP }) => (
       <ListRow item={item} onEdit={handleEdit} />
@@ -964,11 +942,6 @@ const List: React.FC = () => {
 
   const editingItem = editingId ? items[editingId] : null;
 
-  const [selectedProducts, setSelectedProducts] = useState<
-    Record<string, SelectedP>
-  >({});
-  const [previewVisible, setPreviewVisible] = useState(false);
-  const selectedCount = Object.keys(selectedProducts).length;
   // ═══ collapsible search + chips bar (ported from CreateListScreen) ═══
   const [barHeight, setBarHeight] = useState(116);
   const barTranslateY = useRef(new Animated.Value(0)).current;
@@ -1015,57 +988,17 @@ const List: React.FC = () => {
 
   return (
     <View style={s.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-        {/* Header */}
-        {/* <View style={s.header}>
-                    <TouchableOpacity onPress={handleBack} activeOpacity={0.75} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={s.iconBtn}>
-                        <Icon name="arrow-left" size={24} color={DARK.textPrimary} />
-                    </TouchableOpacity>
-                    <View style={s.headerCenter}>
-                        <Text style={s.headerTitle} numberOfLines={1}>{listName}</Text>
-                    </View>
-                    <View style={s.iconBtn} />
-                </View> */}
-        <View style={s.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Icon name="arrow-left" size={24} color={DARK.textPrimary} />
-          </TouchableOpacity>
-
-          <View style={s.headerCenter}>
-            <Text style={s.headerTitle} numberOfLines={1}>
-              {listName}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            onPress={() => setPreviewVisible(true)}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={s.iconBtn}
-          >
-            <Ionicons
-              name="receipt-outline"
-              size={20}
-              color={DARK.textPrimary}
-            />
-            {/* ISKO TEMPRORY COMMENT OUT KIYA HE */}
-            {/* {selectedCount > 0 && (
-                            <View style={s.cartBadge}>
-                                <Text style={s.cartBadgeTxt}>{selectedCount > 99 ? '99+' : selectedCount}</Text>
-                            </View>
-                        )} */}
-            {/* YE BHI TEM LIKHA HE */}
-            <View style={s.cartBadge}>
-              <Text style={s.cartBadgeTxt}>{DEFAULT_ITEMS.length}</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* ── Header: back + list name + receipt icon (count badge ke saath) ── */}
+        <AppHeader
+          title={listName}
+          leftAction="back"
+          rightIcon="receipt-outline"
+          rightIconSet="ionicons"
+          onRightPress={handleOpenPreview}
+          rightBadge={itemCount}
+          showThemeToggle={false}
+        />
 
         {/* Body: collapsible search/chips overlay + list, capture area below */}
         <View style={{ flex: 1 }}>
@@ -1108,7 +1041,7 @@ const List: React.FC = () => {
           </Animated.View>
 
           {/* This wraps only the item cards so "Save as Image" captures
-                        exactly the list, not the search bar / chips above it. */}
+              exactly the list, not the search bar / chips above it. */}
           <ViewShot
             ref={captureRef}
             style={{ flex: 1 }}
@@ -1166,39 +1099,6 @@ const List: React.FC = () => {
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: DARK.bg },
   safeArea: { flex: 1, backgroundColor: DARK.bg },
-  header: {
-    height: HEADER_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: H_PADDING,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: DARK.border,
-    zIndex: 20,
-    backgroundColor: DARK.bg,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 17, fontWeight: '700', color: DARK.textPrimary },
-  headerSub: { fontSize: 11, color: DARK.textMuted, marginTop: 1 },
-  cartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  cartBadgeTxt: { fontSize: 9, fontWeight: '800', color: '#fff' },
 
   // absolute overlay so hiding it on scroll doesn't leave a gap — the
   // FlatList's paddingTop (=barHeight) reserves the space underneath.

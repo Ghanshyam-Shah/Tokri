@@ -174,11 +174,11 @@ const ListScreen = () => {
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
-      
+
+      {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
       <AppHeader
         title="Saved Lists"
         leftIcon="menu"
-        onLeftPress={() => navigation.dispatch(DrawerActions.openDrawer())}
       />
 
       {/* Filters */}

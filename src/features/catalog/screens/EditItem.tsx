@@ -32,6 +32,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AppHeader from '../../../shared/components/headers/AppHeader';
 
 const DARK = {
   bg: '#FFFFFF',
@@ -385,31 +386,17 @@ const EditItem: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        {/* Header — same look as AddItem's, plus a delete icon on the right
-            (this is where "remove" lives, per point 1 in the catalog spec) */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={handleBack}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={styles.iconBtn}
-          >
-            <Icon name="arrow-left" size={24} color={DARK.textPrimary} />
-          </TouchableOpacity>
-          <View style={styles.headerCenter}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              Edit Item
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={handleDelete}
-            activeOpacity={0.75}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={styles.iconBtn}
-          >
-            <Icon name="trash-can-outline" size={22} color={DARK.red} />
-          </TouchableOpacity>
-        </View>
+
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
+
+        <AppHeader
+          title="Add Item"
+          showThemeToggle={false}
+          rightIcon='trash-can-outline'
+          onRightPress={handleDelete}
+          leftIcon="arrow-left"
+          // onLeftPress={handleBack}
+        />
 
         <ScrollView
           style={styles.scroll}
@@ -736,7 +723,7 @@ const EditItem: React.FC = () => {
                         style={[
                           styles.quickOptionText,
                           quantity === val.toString() &&
-                            styles.quickOptionTextActive,
+                          styles.quickOptionTextActive,
                         ]}
                       >
                         {val} {unit}

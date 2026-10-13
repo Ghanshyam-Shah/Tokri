@@ -215,10 +215,13 @@ const AddItem: React.FC = () => {
       <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+
+        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
           title="Add Item"
           leftIcon="arrow-left"
-          onLeftPress={handleBack}
+          showThemeToggle={false}
+          // onLeftPress={handleBack}
         />
 
         <ScrollView
