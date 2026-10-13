@@ -383,7 +383,6 @@ const EditItem: React.FC = () => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
 

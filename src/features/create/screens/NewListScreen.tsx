@@ -146,7 +146,6 @@ const NewListScreen: React.FC = () => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
 

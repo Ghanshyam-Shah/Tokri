@@ -1374,7 +1374,6 @@ const TempCreateListScreen: React.FC = () => {
   // ─── Render ─────────────────────────────────────────────────────
   return (
     <View style={s.root}>
-      <StatusBar barStyle="light-content" backgroundColor={DARK.primary} />
 
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
         {/* ── Header: title only + cart-style preview icon ── */}

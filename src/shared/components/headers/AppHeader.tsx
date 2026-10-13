@@ -176,12 +176,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
           // ── Separator style: dono try karo, ek ko comment karke dusra chalao ──
 
-          // OPTION 1: shadow
-          ...shadows.sm,
-
           // OPTION 2: hairline border
-          // borderBottomWidth: StyleSheet.hairlineWidth,
-          // borderBottomColor: colors.border, // <- apni theme ka border key lagana
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.border, // <- apni theme ka border key lagana
         },
       ]}
     >

@@ -212,16 +212,14 @@ const AddItem: React.FC = () => {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
 
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
 
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
           title="Add Item"
-            leftAction="back"
+          leftAction="back"
           showThemeToggle={false}
-          // onLeftPress={handleBack}
         />
 
         <ScrollView
@@ -564,7 +562,7 @@ const AddItem: React.FC = () => {
                         style={[
                           styles.quickOptionText,
                           quantity === val.toString() &&
-                            styles.quickOptionTextActive,
+                          styles.quickOptionTextActive,
                         ]}
                       >
                         {val} {unit}

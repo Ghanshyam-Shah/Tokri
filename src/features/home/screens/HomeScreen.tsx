@@ -30,12 +30,12 @@ const HomeScreen = () => {
         // justifyContent: 'center',
       }}
     >
-{/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-        <AppHeader
-          title="Add Item"
-          leftIcon="arrow-left"
-          showThemeToggle={false}
-        />    </SafeAreaView>
+      {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
+      <AppHeader
+        title="Add Item"
+        leftIcon="arrow-left"
+        showThemeToggle={true}
+      />    </SafeAreaView>
   );
 };
 
