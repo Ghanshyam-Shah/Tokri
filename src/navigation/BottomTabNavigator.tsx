@@ -2,7 +2,11 @@
 
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createBottomTabNavigator,
+  BottomTabBarButtonProps,
+} from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 import HomeStackNavigator from './stacks/HomeStackNavigator';
@@ -12,112 +16,102 @@ import HistoryStackNavigator from './stacks/HistoryStackNavigator';
 import CreateStackNavigator from './stacks/CreateStackNavigator';
 
 import { BottomTabParamList } from './types/navigationTypes';
+import { useTheme } from '../app/providers/ThemeProvider';
 
-// import { BottomTabParamList } from '../../navigation/types/navigationTypes';
-// import HomeStackNavigator from '../../navigation/stacks/HomeStackNavigator';
-// import ListStackNavigator from '../../navigation/stacks/ListStackNavigator';
-// import CreateStackNavigator from '../../navigation/stacks/CreateStackNavigator';
-// import CatalogStackNavigator from '../../navigation/stacks/CatalogStackNavigator';
-// import HistoryStackNavigator from '../../navigation/stacks/HistoryStackNavigator';
+type IonName = React.ComponentProps<typeof Ionicons>['name'];
 
-// ─── Same DARK palette as CatalogScreen / NewListScreen ──────────────────────
-const DARK = {
-  bg: '#ffffffff',
-
-  surface: '#ffffffff',
-
-  surfaceHigh: '#F0F6FA',
-  border: '#DCE7EE',
-  primary: 'skyblue',
-  primaryMuted: '#EAF4FA',
-  textPrimary: '#263640',
-  textMuted: '#71818C',
-  chipBorder: '#D5E2E9',
-  searchBg: '#F3F7F9',
-  green: '#5FA77A',
-  red: '#D97878',
-  accent: '#8AA7B8',
-};
-
-const TAB_BAR_H = Platform.OS === 'ios' ? 60 : 58;
+const TAB_BAR_H = Platform.OS === 'ios' ? 62 : 60; // bottom safe-area alag se judta hai
 const FAB_SIZE = 40;
+
+// Har tab ke liye icon (filled = active, outline = inactive)
+const TAB_ICONS: Record<string, { active: IonName; inactive: IonName }> = {
+  HomeTab: { active: 'home', inactive: 'home-outline' },
+  ListTab: { active: 'receipt', inactive: 'receipt-outline' },
+  CatalogTab: { active: 'grid', inactive: 'grid-outline' },
+  HistoryTab: { active: 'time', inactive: 'time-outline' },
+};
 
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
 // ─── Center FAB button ────────────────────────────────────────────────────────
-const CustomAddButton = ({ onPress }: any) => (
-  <TouchableOpacity
-    activeOpacity={0.8}
-    onPress={onPress}
-    style={styles.fabWrap}
-  >
-    <View style={styles.fab}>
-      <Ionicons name="add" size={28} color="#fff" />
-    </View>
-  </TouchableOpacity>
-);
+const CustomAddButton = ({ onPress }: BottomTabBarButtonProps) => {
+  const { theme } = useTheme();
+  const { colors } = theme;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={onPress}
+      style={styles.fabWrap}
+    >
+      <View
+        style={[
+          styles.fab,
+          {
+            backgroundColor: colors.bottomTabIconBg,
+            shadowColor: colors.bottomTabIconBg,
+          },
+        ]}
+      >
+        <Ionicons name="add" size={28} color={colors.bottomTabBar} />
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 // ─── Navigator ────────────────────────────────────────────────────────────────
 export default function BottomTabs() {
+  const { theme, isDark } = useTheme();
+  const { colors, fontFamilies } = theme;
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarShowLabel: true,
 
-        tabBarActiveTintColor: DARK.primary,
-        tabBarInactiveTintColor: DARK.textMuted,
+        tabBarActiveTintColor: colors.bottomTabIconActive,
+        tabBarInactiveTintColor: colors.bottomTabIcon,
 
         tabBarStyle: {
-          height: TAB_BAR_H,
-          backgroundColor: DARK.surface,
+          // gesture-nav / notch wale phones ke liye bottom inset yahin judta hai
+          height: TAB_BAR_H + insets.bottom,
+          paddingBottom: (Platform.OS === 'ios' ? 8 : 6) + insets.bottom,
+          backgroundColor: colors.bottomTabBar,
           borderTopWidth: 1,
-          borderTopColor: DARK.border,
-          elevation: 12,
+          borderTopColor: colors.border,
+          elevation: 8,
           shadowColor: '#000',
-          shadowOpacity: 0.3,
+          shadowOpacity: isDark ? 0.4 : 0.08,
           shadowRadius: 8,
           shadowOffset: { width: 0, height: -2 },
-          // paddingTop: 2,
-          paddingBottom: Platform.OS === 'ios' ? 8 : 6,
         },
 
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600',
-          marginTop: 1,
+          fontFamily: fontFamilies.medium,
+          marginTop: 2,
         },
 
+        // Active tab ke icon ke peeche pill (bottomTabIconBg)
         tabBarIcon: ({ focused, color }) => {
-          type IoniconsName =
-            | 'home'
-            | 'home-outline'
-            | 'receipt'
-            | 'receipt-outline'
-            | 'grid'
-            | 'grid-outline'
-            | 'time'
-            | 'time-outline'
-            | 'ellipse';
-
-          let iconName: IoniconsName = 'ellipse';
-
-          switch (route.name) {
-            case 'HomeTab':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'ListTab':
-              iconName = focused ? 'receipt' : 'receipt-outline';
-              break;
-            case 'CatalogTab':
-              iconName = focused ? 'grid' : 'grid-outline';
-              break;
-            case 'HistoryTab':
-              iconName = focused ? 'time' : 'time-outline';
-              break;
-          }
-
-          return <Ionicons name={iconName} size={22} color={color} />;
+          const icons = TAB_ICONS[route.name];
+          if (!icons) return null;
+          return (
+            <View
+              style={[
+                styles.iconPill,
+                // focused && { backgroundColor: colors.bottomTabIconBg },   This is Bottom tab bar icon bg color
+              ]}
+            >
+              <Ionicons
+                name={focused ? icons.active : icons.inactive}
+                size={22}
+                color={color}
+              />
+            </View>
+          );
         },
       })}
     >
@@ -158,7 +152,7 @@ export default function BottomTabs() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles (sirf layout, colors upar theme se aate hain) ─────────────────────
 const styles = StyleSheet.create({
   fabWrap: {
     top: (TAB_BAR_H - FAB_SIZE) / 2,
@@ -169,19 +163,18 @@ const styles = StyleSheet.create({
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
-    // borderWidth: 3,
-
-    borderColor: DARK.surface,
-
-    backgroundColor: DARK.primary,
-
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: DARK.primary,
     shadowOpacity: 0.45,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
+  iconPill: {
+    width: 52,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
-// </>

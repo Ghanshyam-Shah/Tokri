@@ -42,7 +42,7 @@ export const lightColors: ColorPalette = {
   // bottom tab
   bottomTabBar: '#FFFFFF',
   bottomTabIcon: '#71818C',
-  bottomTabIconActive: '#263640', // skyblue pill ke upar dark icon
+  bottomTabIconActive: '#87CEEB', // skyblue pill ke upar dark icon
   bottomTabIconBg: '#87CEEB', // skyblue
 
   // cards
