@@ -23,16 +23,16 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  StatusBar,
   Platform,
   Alert,
   Image,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
 const DARK = {
   bg: '#FFFFFF',
@@ -219,7 +219,7 @@ const sec = StyleSheet.create({
 // ─────────────────────────────────────────────────────────────
 const EditItem: React.FC = () => {
   const navigation = useNavigation<any>();
-  const route = useRoute<any>();
+  const route = useRoute<RouteProp<AppStackParamList, 'EditItem'>>()
   const productId: string | undefined = route.params?.productId;
 
   const existingProduct = useMemo(
@@ -388,12 +388,12 @@ const EditItem: React.FC = () => {
 
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader
-          title="Add Item"
-            leftAction="back"
+          title="Edit Item"
+          leftAction="back"
           showThemeToggle={false}
           rightIcon='trash-can-outline'
           onRightPress={handleDelete}
-          // onLeftPress={handleBack}
+        // onLeftPress={handleBack}
         />
 
         <ScrollView

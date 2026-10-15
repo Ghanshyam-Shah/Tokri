@@ -55,6 +55,7 @@ import AppHeader from '../../../shared/components/headers/AppHeader';
 // the screen still works minus Save-as-Image / Save-as-PDF.
 import ViewShot from 'react-native-view-shot';
 import { generatePDF } from 'react-native-html-to-pdf';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 // NOTE: 'List' isn't in your existing CreateStackParamList yet, so it was
@@ -67,10 +68,8 @@ import { generatePDF } from 'react-native-html-to-pdf';
 //   };
 //
 // Until then, this local param type keeps the screen self-contained.
-type ListStackParamList = {
-  List: { listId?: string; listName?: string; items?: SelectedP[] };
-};
-type RouteProps = RouteProp<ListStackParamList, 'List'>;
+
+type RouteProps = RouteProp<AppStackParamList, 'List'>;
 
 // ═══════════════════════════════════════════════════════════════════
 // THEME — kept identical to CreateListScreen so both screens match.

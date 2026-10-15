@@ -1,4 +1,18 @@
-// Auth Stack — Login flow screens
+{/* ═════════════════════════════════ List Item Params ═════════════════════════════════ */}
+
+export interface ListItemParam {
+  id: string;
+  name: string;
+  nameHindi: string;
+  unit: string;
+  imageUrl: string;
+  quantity: number;
+  note?: string;
+  categoryId?: string;
+}
+
+/* ═════════════════════════════════ Auth Stack Params ═════════════════════════════════ */
+
 export type AuthStackParamList = {
   Splash: undefined;
   Login: undefined;
@@ -6,42 +20,47 @@ export type AuthStackParamList = {
   PhoneOTP: { phoneNumber: string };
 };
 
-// Home Stack
-export type HomeStackParamList = {
-  HomeMain: undefined;
- 
-  AddItem: undefined;
-  EditItem: undefined;
-};
+/* ═════════════════════════════════ Home Stack Params ═════════════════════════════════ */
 
-// List Stack
-export type ListStackParamList = {
-  ListMain: undefined;
-};
+export type HomeStackParamList = { HomeMain: undefined };
 
-// Create Stack
-export type CreateStackParamList = {
-  NewListScreen: undefined;
+/* ═════════════════════════════════ List Stack Params ═════════════════════════════════ */
+
+export type ListStackParamList = { ListMain: undefined };
+
+/* ═════════════════════════════════ Create Stack Params ═════════════════════════════════ */
+
+export type CreateStackParamList = { NewListScreen: undefined };
+
+/* ═════════════════════════════════ Catalog Stack Params ═════════════════════════════════ */
+
+export type CatalogStackParamList = { CatalogMain: undefined };
+
+/* ═════════════════════════════════ History Stack Params ═════════════════════════════════ */
+
+export type HistoryStackParamList = { HistoryMain: undefined };
+
+/* ═════════════════════════════════ App Stack Params ═════════════════════════════════ */
+
+export type AppStackParamList = {
+  MainDrawer: undefined;
   CreateListScreen: {
     listId?: string;
     listName?: string;
   };
-  List: undefined;
-};
-
-// Catalog Stack
-export type CatalogStackParamList = {
-  CatalogMain: undefined;
+  List: {
+    listId?: string;
+    listName?: string;
+    items?: ListItemParam[];
+  };
   AddItem: undefined;
-  EditItem: undefined;
+  EditItem: {
+    productId: string;
+  };
 };
 
-// History Stack
-export type HistoryStackParamList = {
-  HistoryMain: undefined;
-};
+/* ═════════════════════════════════ Bottom Tab Params ═════════════════════════════════ */
 
-// Bottom Tab
 export type BottomTabParamList = {
   HomeTab: undefined;
   ListTab: undefined;
@@ -50,15 +69,23 @@ export type BottomTabParamList = {
   HistoryTab: undefined;
 };
 
+/* ═════════════════════════════════ Drawer Params ═════════════════════════════════ */
+
+// export type DrawerParamList = {
+//   Help: undefined;
+//   About: undefined;
+//   Settings: undefined;
+//   MainTabs: undefined;
+// };
 // Drawer
 export type DrawerParamList = {
+  MainTabs: undefined;
   Help: undefined;
   About: undefined;
-  Settings: undefined;
-  MainTabs: undefined;
 };
 
-// Root Navigator
+/* ═════════════════════════════════ Root Stack Params ═════════════════════════════════ */
+
 export type RootStackParamList = {
   Auth: undefined;
   App: undefined;

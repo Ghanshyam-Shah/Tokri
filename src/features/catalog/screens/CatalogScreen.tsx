@@ -31,6 +31,8 @@ import { DrawerActions, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Product } from '../types/types';
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 // ═══════════════════════════════════════════════════════════════════
 // THEME SYSTEM
 // ═══════════════════════════════════════════════════════════════════
@@ -374,7 +376,7 @@ const EmptyList = React.memo(() => (
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════════
 const CatalogScreen: React.FC = () => {
-  const navigation = useNavigation();
+const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -395,14 +397,15 @@ const CatalogScreen: React.FC = () => {
   // header "+" → AddItem screen
   const handleAddProduct = useCallback(() => {
     // TODO: AddItem screen banne ke baad wire karna
-    (navigation as any).navigate('AddItem');
+   navigation.navigate('AddItem');                       // `as any` hata do
+
   }, [navigation]);
 
   // card "Edit" → EditItem screen
   const handleEditProduct = useCallback(
     (id: string) => {
       // TODO: EditItem screen banne ke baad wire karna
-      (navigation as any).navigate('EditItem', { productId: id });
+     navigation.navigate('EditItem', { productId: id });
     },
     [navigation],
   );
@@ -462,7 +465,7 @@ const CatalogScreen: React.FC = () => {
 
   return (
     <View style={s.root}>
-      <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView style={s.safeArea} edges={['top']}>
         
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
         <AppHeader

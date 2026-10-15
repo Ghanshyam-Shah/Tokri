@@ -33,7 +33,6 @@ const HomeScreen = () => {
       {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
       <AppHeader
         title=""
-        leftIcon=""
         showThemeToggle={true}
       />    </SafeAreaView>
   );

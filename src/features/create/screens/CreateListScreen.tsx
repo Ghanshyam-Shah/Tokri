@@ -14,7 +14,6 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  StatusBar,
   Platform,
   Alert,
   Image,
@@ -37,16 +36,16 @@ import {
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { CreateStackParamList } from '../../../navigation/types/navigationTypes';
+import { AppStackParamList, CreateStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 // import { CreateStackParamList } from '../../navigation/types/navigationTypes';
 // import { CreateStackParamList } from '../../../navigation/types/navigationTypes';
 // import AppHeader from '../../../shared/components/headers/AppHeader';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
-type RouteProps = RouteProp<CreateStackParamList, 'CreateListScreen'>;
+type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
 type NavProp = NativeStackNavigationProp<
-  CreateStackParamList,
+  AppStackParamList,
   'CreateListScreen'
 >;
 
@@ -1284,8 +1283,12 @@ const TempCreateListScreen: React.FC = () => {
     if (selectedCount === 0) return;
     savedSnapshotRef.current = JSON.stringify(selectedProducts);
     // TODO: swap 'NextScreenName' for the actual next route in CreateStackParamList
-    navigation.navigate('List' as never);
-  }, [selectedCount, selectedProducts, navigation]);
+    navigation.navigate('List', {
+      listId: route.params?.listId,
+      listName,
+      items: Object.values(selectedProducts),
+    });
+  }, [selectedCount, selectedProducts, navigation, route.params?.listId, listName]);
 
   const handleShare = useCallback(() => {
     Alert.alert('Share', 'Share functionality aayegi!');
@@ -1377,7 +1380,7 @@ const TempCreateListScreen: React.FC = () => {
 
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
         {/* ── Header: title only + cart-style preview icon ── */}
-      
+
 
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
 

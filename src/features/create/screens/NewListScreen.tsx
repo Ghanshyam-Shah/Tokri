@@ -19,13 +19,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import {
+  AppStackParamList,
   CreateStackParamList,
   ListStackParamList,
 } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 
 // ─── Navigation type ──────────────────────────────────────────────────────────
-type NavProp = NativeStackNavigationProp<CreateStackParamList, 'NewListScreen'>;
+type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
 // ─── Same pattern as CatalogScreen ───────────────────────────────────────────
 const DARK = {
@@ -137,7 +138,10 @@ const NewListScreen: React.FC = () => {
       Alert.alert('Naam zaroori hai', 'List ka naam daalein pehle.');
       return;
     }
-    navigation.navigate('CreateListScreen', { listId: '123' });
+    navigation.navigate('CreateListScreen', {
+      listId: String(Date.now()),
+      listName: listName.trim(),
+    });
   }, [listName, navigation]);
 
   const handleBack = useCallback(() => {
@@ -147,7 +151,7 @@ const NewListScreen: React.FC = () => {
   return (
     <View style={styles.root}>
 
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
 
 
         {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
