@@ -102,7 +102,7 @@ export default function BottomTabs() {
             <View
               style={[
                 styles.iconPill,
-                // focused && { backgroundColor: colors.bottomTabIconBg },   This is Bottom tab bar icon bg color
+                // focused && { backgroundColor: colors.bottomTabIconBg },  // This is Bottom tab bar icon bg color
               ]}
             >
               <Ionicons
