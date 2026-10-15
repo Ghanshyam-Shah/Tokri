@@ -173,7 +173,6 @@ const ListScreen = () => {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={DARK.bg} />
 
       {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
       <AppHeader
