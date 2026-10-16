@@ -34,7 +34,9 @@ const HomeScreen = () => {
       <AppHeader
         title=""
         showThemeToggle={true}
-      />    </SafeAreaView>
+      />  
+      <Text style={{fontSize: 20, marginTop: 30}}>This is on catalog-breck branch</Text>
+        </SafeAreaView>
   );
 };
 
