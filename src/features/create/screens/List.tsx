@@ -1,30 +1,18 @@
 // src/features/list/screens/List.tsx
 //
-// FINAL LIST SCREEN — reached after "Continue" from CreateListScreen.
+// FINAL LIST SCREEN — CreateListScreen ke "Continue" ke baad.
 //
-// ⚠️ Native packages needed for the 4 bottom actions:
+// ⚠️ Native packages (4 bottom actions ke liye):
 //   npm install react-native-view-shot        (Save as Image)
 //   npm install react-native-html-to-pdf       (Save as PDF)
-//   (WhatsApp share uses the built-in Linking API — no extra package needed,
-//    but the user must have WhatsApp installed.)
-// Both view-shot and html-to-pdf need a native rebuild (pod install / gradle
-// sync) — they will crash with "null is not an object" if you skip that.
-//
-// ⚠️ Navigation: update CreateListScreen's handleContinue to pass real data,
-// e.g.  navigation.navigate('List', { listId, listName, items: Object.values(selectedProducts) })
-// This screen falls back to DEFAULT_ITEMS if nothing is passed, just so it
-// doesn't crash while you wire that up.
+//   (WhatsApp share built-in Linking se hota hai; WhatsApp installed hona chahiye.)
+// Dono ke liye native rebuild (pod install / gradle sync) zaroori hai.
 //
 // Header: shared AppHeader (back + list name + receipt icon with count badge)
-// StatusBar: App.tsx ke ThemedStatusBar se control hota hai, yahan nahi.
-//
-// 🔎 Search + category chips were ported over from CreateListScreen (same
-// components, same collapsible-on-scroll behaviour) so you can filter the
-// final list before exporting/sharing it. They live OUTSIDE the ViewShot
-// wrapper on purpose — so "Save as Image" only captures the item cards, not
-// the search bar / chips sitting on top of them.
+// Search + chips ViewShot ke BAHAR hain, taaki "Save as Image" sirf cards capture kare.
+// Colors/fonts/spacing: sab useTheme() se.
 
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -50,55 +38,26 @@ import { RouteProp, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { useTheme } from '../../../app/providers/ThemeProvider';
 
-// Optional native modules — comment these two lines out if not installed yet,
-// the screen still works minus Save-as-Image / Save-as-PDF.
+// Optional native modules — install na hon to ye 2 lines comment kar do,
+// screen Save-as-Image / Save-as-PDF ke bina chalegi.
 import ViewShot from 'react-native-view-shot';
 import { generatePDF } from 'react-native-html-to-pdf';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
-// ─── Nav types ────────────────────────────────────────────────────────────────
-// NOTE: 'List' isn't in your existing CreateStackParamList yet, so it was
-// resolving to `never` and breaking `route.params.listName` / `.items`.
-// Add it there once you wire up navigation, e.g.:
-//
-//   export type CreateStackParamList = {
-//     ...
-//     List: { listId?: string; listName?: string; items?: SelectedP[] };
-//   };
-//
-// Until then, this local param type keeps the screen self-contained.
-
 type RouteProps = RouteProp<AppStackParamList, 'List'>;
+type Theme = ReturnType<typeof useTheme>['theme'];
 
-// ═══════════════════════════════════════════════════════════════════
-// THEME — kept identical to CreateListScreen so both screens match.
-// 👉 Better long-term: move this THEMES block into a shared
-//    `src/shared/theme.ts` and import { DARK } from both screens,
-//    instead of keeping two copies in sync by hand.
-// ═══════════════════════════════════════════════════════════════════
-const THEMES = {
-  skySlate: {
-    bg: '#FFFFFF',
-    surface: '#FFFFFF',
-    surfaceHigh: '#F0F6FA',
-    border: '#DCE7EE',
-    primary: 'skyblue',
-    primaryMuted: '#EAF4FA',
-    textPrimary: '#263640',
-    textMuted: '#71818C',
-    chipBorder: '#D5E2E9',
-    searchBg: '#F3F7F9',
-    green: '#5FA77A',
-    red: '#D97878',
-    accent: '#8AA7B8',
-  },
-} as const;
-const ACTIVE_THEME: keyof typeof THEMES = 'skySlate';
-const DARK = THEMES[ACTIVE_THEME];
-
+// ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
 const BOTTOM_BAR_H = 92;
+
+// Theme se bahar (jaan-boojhkar):
+const SCRIM = 'rgba(0,0,0,0.5)'; // modal backdrop
+const PHOTO_BADGE_ICON = '#FFFFFF'; // note badge ka icon (badge primary pe hai)
+const WHATSAPP_GREEN = '#25D366'; // WhatsApp brand color
+const WHATSAPP_ICON = '#FFFFFF';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SelectedP {
@@ -109,10 +68,10 @@ interface SelectedP {
   imageUrl: string;
   quantity: number;
   note?: string;
-  categoryId?: string; // used by the category chips filter below
+  categoryId?: string; // category chips filter ke liye
 }
 
-// ─── Categories (same list as CreateListScreen's catalog chips) ───────────
+// ─── Categories (CreateListScreen jaisi) ──────────────────────────────────────
 interface Category {
   id: string;
   label: string;
@@ -128,9 +87,8 @@ const CATEGORIES: Category[] = [
 ];
 
 // ─── Default / fallback items ──────────────────────────────────────────────
-// Used ONLY when this screen is opened without real `route.params.items`
-// (e.g. testing List.tsx directly, or before you've wired up navigation from
-// CreateListScreen). Safe to delete once navigation is wired up.
+// Sirf tab use hota hai jab route.params.items na mile. Navigation wire hone
+// ke baad delete kar sakte ho.
 const DEFAULT_ITEMS: SelectedP[] = [
   {
     id: '1',
@@ -217,8 +175,373 @@ const DEFAULT_ITEMS: SelectedP[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
-// Category Chips — ported from CreateListScreen as-is (flexShrink:0 on the
-// ScrollView + the chip itself, numberOfLines={1} on the text).
+// STYLES (theme se)
+// ═══════════════════════════════════════════════════════════════════
+const createStyles = (theme: Theme) => {
+  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
+
+  const onPrimary = colors.appBackground; // primary ke upar ka text/icon
+  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
+
+  return {
+    // ── Category chips ──
+    ch: StyleSheet.create({
+      scrollStyle: { flexGrow: 0, flexShrink: 0 },
+      row: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        paddingHorizontal: H_PADDING,
+        paddingVertical: spacing.xs,
+      },
+      chip: {
+        flexShrink: 0,
+        paddingHorizontal: spacing.md + 2,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+      },
+      active: { backgroundColor: colors.primary, borderColor: colors.primary },
+      inactive: { borderColor: colors.border },
+      text: { fontSize: typography.xs + 1, fontFamily: fontFamilies.medium },
+    }),
+
+    // ── List row ──
+    row: StyleSheet.create({
+      card: {
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg - 2,
+        borderWidth: 1,
+        borderColor: colors.border,
+        padding: spacing.md,
+        marginBottom: spacing.sm + 2,
+      },
+      topRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: spacing.md,
+      },
+      thumbWrap: { width: 52, height: 52 },
+      thumb: {
+        width: 52,
+        height: 52,
+        borderRadius: borderRadius.md - 2,
+        backgroundColor: colors.cardBgVariant,
+      },
+      noteBadge: {
+        position: 'absolute',
+        top: -4,
+        left: -4,
+        width: 18,
+        height: 18,
+        borderRadius: 6,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      name: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      hindi: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.hindi ?? fontFamilies.regular,
+        color: colors.textMuted,
+        marginTop: 2,
+      },
+      qtyPill: {
+        backgroundColor: primaryMuted,
+        paddingHorizontal: spacing.sm + 2,
+        paddingVertical: 5,
+        borderRadius: borderRadius.sm,
+        alignSelf: 'flex-start',
+      },
+      qtyPillTxt: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.bold,
+        color: colors.primary,
+      },
+      bottomRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+      },
+      editBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        paddingHorizontal: 7,
+        paddingVertical: 7,
+        borderRadius: borderRadius.sm,
+        borderWidth: 1,
+        borderColor: colors.border,
+      },
+      notePill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        marginTop: spacing.xs,
+        backgroundColor: primaryMuted,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+      },
+      noteText: {
+        fontSize: typography.xs - 2,
+        fontFamily: fontFamilies.medium,
+        color: colors.primary,
+      },
+    }),
+
+    // ── Edit modal ──
+    em: StyleSheet.create({
+      overlay: { flex: 1, justifyContent: 'flex-end' },
+      backdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: SCRIM,
+      },
+      sheet: {
+        backgroundColor: colors.cardBg,
+        borderTopLeftRadius: borderRadius.xl,
+        borderTopRightRadius: borderRadius.xl,
+        padding: spacing.xl,
+        paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xxl,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+      },
+      handle: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.border,
+        alignSelf: 'center',
+        marginBottom: spacing.md + 2,
+      },
+      headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md + 2,
+      },
+      headerTitle: {
+        fontSize: typography.md,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      productRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        marginBottom: spacing.xl,
+        padding: spacing.md,
+        backgroundColor: colors.cardBgVariant,
+        borderRadius: borderRadius.md,
+      },
+      thumb: {
+        width: 52,
+        height: 52,
+        borderRadius: borderRadius.md - 2,
+        backgroundColor: colors.appBackground,
+      },
+      pName: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      pHindi: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginTop: 2,
+      },
+      label: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.textMuted,
+        letterSpacing: 0.5,
+        marginBottom: spacing.sm,
+      },
+      qtyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm + 2,
+        marginBottom: spacing.xl,
+      },
+      qBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: borderRadius.md - 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      qBtnMinus: { backgroundColor: colors.cardBgVariant },
+      qBtnPlus: { backgroundColor: colors.primary },
+      qCount: {
+        fontSize: typography.xl,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+        minWidth: 32,
+        textAlign: 'center',
+      },
+      unitTag: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginLeft: spacing.xs,
+      },
+      noteInput: {
+        backgroundColor: colors.cardBgVariant,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: borderRadius.md - 2,
+        padding: spacing.md,
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.regular,
+        color: colors.textPrimary,
+        marginBottom: spacing.xl,
+        minHeight: 64,
+        textAlignVertical: 'top',
+      },
+      actionsRow: { flexDirection: 'row', gap: spacing.sm + 2 },
+      removeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 50,
+        paddingHorizontal: spacing.lg,
+        borderRadius: borderRadius.md,
+        borderWidth: 1.5,
+        borderColor: colors.error,
+      },
+      removeTxt: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.error,
+      },
+      saveBtn: {
+        flex: 1,
+        height: 50,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      saveTxt: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.bold,
+        color: onPrimary,
+      },
+      btnIcon: { marginRight: 6 },
+    }),
+
+    // ── Export bar ──
+    xb: StyleSheet.create({
+      wrap: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        backgroundColor: colors.appBackground,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+        paddingTop: spacing.sm + 2,
+        paddingHorizontal: spacing.sm,
+        paddingBottom: Platform.OS === 'ios' ? 26 : spacing.md,
+      },
+      item: { flex: 1, alignItems: 'center', gap: spacing.xs },
+      itemDisabled: { opacity: 0.4 },
+      iconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: borderRadius.lg - 2,
+        backgroundColor: primaryMuted,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      iconWrapWhatsapp: { backgroundColor: WHATSAPP_GREEN },
+      label: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.textMuted,
+      },
+    }),
+
+    // ── Screen ──
+    s: StyleSheet.create({
+      root: { flex: 1, backgroundColor: colors.appBackground },
+      safeArea: { flex: 1, backgroundColor: colors.appBackground },
+      body: { flex: 1 },
+
+      // absolute overlay: hide hone par gap nahi bachta; FlatList ka
+      // paddingTop (=barHeight) neeche jagah reserve karta hai.
+      collapsibleBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        backgroundColor: colors.appBackground,
+        paddingBottom: spacing.sm,
+      },
+      searchWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: H_PADDING,
+        marginTop: spacing.md,
+        marginBottom: spacing.sm,
+        backgroundColor: colors.cardBgVariant,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        paddingHorizontal: spacing.md,
+        height: 44,
+      },
+      searchIcon: { marginRight: spacing.sm },
+      searchInput: {
+        flex: 1,
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.regular,
+        color: colors.textPrimary,
+        paddingVertical: 0,
+      },
+      // ViewShot ko solid background do, warna saved image transparent aayegi
+      captureArea: { flex: 1, backgroundColor: colors.appBackground },
+      listContent: { paddingHorizontal: H_PADDING },
+      emptyWrap: {
+        alignItems: 'center',
+        paddingVertical: spacing.giant,
+        gap: spacing.sm + 2,
+      },
+      emptyTxt: {
+        color: colors.textPrimary,
+        fontFamily: fontFamilies.semiBold,
+        fontSize: typography.sm,
+      },
+    }),
+  };
+};
+
+// Theme ke hisaab se styles cache (har row apni stylesheet nahi banata)
+const stylesCache = new WeakMap<Theme, ReturnType<typeof createStyles>>();
+const useStyles = () => {
+  const { theme } = useTheme();
+  let st = stylesCache.get(theme);
+  if (!st) {
+    st = createStyles(theme);
+    stylesCache.set(theme, st);
+  }
+  return { theme, ...st };
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// Category Chips
 // ═══════════════════════════════════════════════════════════════════
 const CategoryChips = React.memo(
   ({
@@ -229,178 +552,108 @@ const CategoryChips = React.memo(
     categories: Category[];
     selected: string;
     onSelect: (id: string) => void;
-  }) => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={ch.row}
-      style={ch.scrollStyle}
-    >
-      {categories.map(cat => {
-        const active = selected === cat.id;
-        return (
-          <TouchableOpacity
-            key={cat.id}
-            onPress={() => onSelect(cat.id)}
-            activeOpacity={0.8}
-            style={[ch.chip, active ? ch.active : ch.inactive]}
-          >
-            <Text
-              style={[ch.text, { color: active ? '#fff' : DARK.textMuted }]}
-              numberOfLines={1}
+  }) => {
+    const { theme, ch } = useStyles();
+    const { colors } = theme;
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={ch.row}
+        style={ch.scrollStyle}
+      >
+        {categories.map(cat => {
+          const active = selected === cat.id;
+          return (
+            <TouchableOpacity
+              key={cat.id}
+              onPress={() => onSelect(cat.id)}
+              activeOpacity={0.8}
+              style={[ch.chip, active ? ch.active : ch.inactive]}
             >
-              {cat.label} / {cat.labelHindi}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  ),
+              <Text
+                style={[
+                  ch.text,
+                  { color: active ? colors.appBackground : colors.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {cat.label} / {cat.labelHindi}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  },
 );
-const ch = StyleSheet.create({
-  scrollStyle: { flexGrow: 0, flexShrink: 0 },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: H_PADDING,
-    paddingVertical: 4,
-  },
-  chip: {
-    flexShrink: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  active: { backgroundColor: DARK.primary, borderColor: DARK.primary },
-  inactive: { borderColor: DARK.chipBorder },
-  text: { fontSize: 13, fontWeight: '500' },
-});
 
 // ═══════════════════════════════════════════════════════════════════
-// Row item — column-direction list, one product per row
+// Row item — column list, ek product per row
 // ═══════════════════════════════════════════════════════════════════
 const ListRow = React.memo(
-  ({ item, onEdit }: { item: SelectedP; onEdit: (id: string) => void }) => (
-    <View style={row.card}>
-      <View style={row.topRow}>
-        <View style={row.thumbWrap}>
-          <Image source={{ uri: item.imageUrl }} style={row.thumb} />
-          {!!item.note && (
-            <View style={row.noteBadge}>
-              <Icon name="note-text-outline" size={11} color="#fff" />
-            </View>
-          )}
-        </View>
+  ({ item, onEdit }: { item: SelectedP; onEdit: (id: string) => void }) => {
+    const { theme, row } = useStyles();
+    const { colors } = theme;
 
-        <View style={{ flex: 1 }}>
-          <Text style={row.name} numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text style={row.hindi} numberOfLines={1}>
-            {item.nameHindi} • {item.unit}
-          </Text>
-          {item.note ? (
-            <View style={row.notePill}>
-              <Icon
-                name="file-document-outline"
-                size={12}
-                color={DARK.primary}
-              />
-              <Text style={row.noteText} numberOfLines={1}>
-                {item.note}
-              </Text>
-            </View>
-          ) : null}
-        </View>
+    return (
+      <View style={row.card}>
+        <View style={row.topRow}>
+          <View style={row.thumbWrap}>
+            <Image source={{ uri: item.imageUrl }} style={row.thumb} />
+            {!!item.note && (
+              <View style={row.noteBadge}>
+                <Icon
+                  name="note-text-outline"
+                  size={11}
+                  color={colors.appBackground}
+                />
+              </View>
+            )}
+          </View>
 
-        <View style={row.qtyPill}>
-          <Text style={row.qtyPillTxt}>Qty {item.quantity}</Text>
-        </View>
-        <View style={row.bottomRow}>
-          <TouchableOpacity
-            onPress={() => onEdit(item.id)}
-            activeOpacity={0.8}
-            style={row.editBtn}
-          >
-            <Icon name="pencil-outline" size={14} color={DARK.primary} />
-          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={row.name} numberOfLines={1}>
+              {item.name}
+            </Text>
+            <Text style={row.hindi} numberOfLines={1}>
+              {item.nameHindi} • {item.unit}
+            </Text>
+            {item.note ? (
+              <View style={row.notePill}>
+                <Icon
+                  name="file-document-outline"
+                  size={12}
+                  color={colors.primary}
+                />
+                <Text style={row.noteText} numberOfLines={1}>
+                  {item.note}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={row.qtyPill}>
+            <Text style={row.qtyPillTxt}>Qty {item.quantity}</Text>
+          </View>
+          <View style={row.bottomRow}>
+            <TouchableOpacity
+              onPress={() => onEdit(item.id)}
+              activeOpacity={0.8}
+              style={row.editBtn}
+            >
+              <Icon name="pencil-outline" size={14} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  ),
+    );
+  },
 );
-const row = StyleSheet.create({
-  card: {
-    backgroundColor: DARK.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    padding: 12,
-    marginBottom: 10,
-  },
-  topRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  thumbWrap: { width: 52, height: 52 },
-  thumb: {
-    width: 52,
-    height: 52,
-    borderRadius: 10,
-    backgroundColor: DARK.surfaceHigh,
-  },
-  noteBadge: {
-    position: 'absolute',
-    top: -4,
-    left: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 6,
-    backgroundColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  name: { fontSize: 14, fontWeight: '700', color: DARK.textPrimary },
-  hindi: { fontSize: 12, color: DARK.textMuted, marginTop: 2 },
-  note: { fontSize: 11, color: DARK.textMuted, marginTop: 4 },
-  qtyPill: {
-    backgroundColor: DARK.primaryMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  qtyPillTxt: { fontSize: 12, fontWeight: '700', color: DARK.primary },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 7,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: DARK.chipBorder,
-  },
-  editTxt: { fontSize: 12, fontWeight: '600', color: DARK.primary },
-  notePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-    backgroundColor: DARK.primaryMuted,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  noteText: { fontSize: 10, color: DARK.primary, fontWeight: '500' },
-});
 
 // ═══════════════════════════════════════════════════════════════════
-// Edit modal — quantity + note (same pattern as CreateListScreen)
+// Edit modal — quantity + note
 // ═══════════════════════════════════════════════════════════════════
 const EditItemModal = React.memo(
   ({
@@ -416,10 +669,13 @@ const EditItemModal = React.memo(
     onSave: (qty: number, note: string) => void;
     onRemove: () => void;
   }) => {
+    const { theme, em } = useStyles();
+    const { colors } = theme;
+
     const [qty, setQty] = useState(item?.quantity ?? 1);
     const [ntxt, setNtxt] = useState(item?.note ?? '');
 
-    React.useEffect(() => {
+    useEffect(() => {
       setQty(item?.quantity ?? 1);
       setNtxt(item?.note ?? '');
     }, [item?.id]);
@@ -450,7 +706,7 @@ const EditItemModal = React.memo(
                 onPress={onClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Icon name="close" size={22} color={DARK.textMuted} />
+                <Icon name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -468,16 +724,16 @@ const EditItemModal = React.memo(
             <View style={em.qtyRow}>
               <TouchableOpacity
                 onPress={() => setQty(q => Math.max(1, q - 1))}
-                style={[em.qBtn, { backgroundColor: DARK.surfaceHigh }]}
+                style={[em.qBtn, em.qBtnMinus]}
               >
-                <Icon name="minus" size={16} color={DARK.textPrimary} />
+                <Icon name="minus" size={16} color={colors.textPrimary} />
               </TouchableOpacity>
               <Text style={em.qCount}>{qty}</Text>
               <TouchableOpacity
                 onPress={() => setQty(q => q + 1)}
-                style={[em.qBtn, { backgroundColor: DARK.primary }]}
+                style={[em.qBtn, em.qBtnPlus]}
               >
-                <Icon name="plus" size={16} color="#fff" />
+                <Icon name="plus" size={16} color={colors.appBackground} />
               </TouchableOpacity>
               <Text style={em.unitTag}>{item.unit} each</Text>
             </View>
@@ -487,7 +743,7 @@ const EditItemModal = React.memo(
               value={ntxt}
               onChangeText={t => setNtxt(t.slice(0, 120))}
               placeholder="e.g. Patanjali brand lena..."
-              placeholderTextColor={DARK.textMuted}
+              placeholderTextColor={colors.textMuted}
               style={em.noteInput}
               multiline
             />
@@ -501,8 +757,8 @@ const EditItemModal = React.memo(
                 <Icon
                   name="trash-can-outline"
                   size={16}
-                  color={DARK.red}
-                  style={{ marginRight: 6 }}
+                  color={colors.error}
+                  style={em.btnIcon}
                 />
                 <Text style={em.removeTxt}>Remove</Text>
               </TouchableOpacity>
@@ -514,8 +770,8 @@ const EditItemModal = React.memo(
                 <Icon
                   name="check-circle-outline"
                   size={18}
-                  color="#fff"
-                  style={{ marginRight: 6 }}
+                  color={colors.appBackground}
+                  style={em.btnIcon}
                 />
                 <Text style={em.saveTxt}>Done / हो गया</Text>
               </TouchableOpacity>
@@ -526,118 +782,9 @@ const EditItemModal = React.memo(
     );
   },
 );
-const em = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheet: {
-    backgroundColor: DARK.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    borderTopWidth: 1,
-    borderTopColor: DARK.border,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: DARK.border,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: DARK.textPrimary },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: DARK.surfaceHigh,
-    borderRadius: 12,
-  },
-  thumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: DARK.bg },
-  pName: { fontSize: 15, fontWeight: '700', color: DARK.textPrimary },
-  pHindi: { fontSize: 12, color: DARK.textMuted, marginTop: 2 },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: DARK.textMuted,
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  qtyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 20,
-  },
-  qBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qCount: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: DARK.textPrimary,
-    minWidth: 32,
-    textAlign: 'center',
-  },
-  unitTag: { fontSize: 12, color: DARK.textMuted, marginLeft: 4 },
-  noteInput: {
-    backgroundColor: DARK.searchBg,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    color: DARK.textPrimary,
-    marginBottom: 20,
-    minHeight: 64,
-    textAlignVertical: 'top',
-  },
-  actionsRow: { flexDirection: 'row', gap: 10 },
-  removeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: DARK.red,
-  },
-  removeTxt: { fontSize: 14, fontWeight: '700', color: DARK.red },
-  saveBtn: {
-    flex: 1,
-    height: 50,
-    backgroundColor: DARK.primary,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
-});
 
 // ═══════════════════════════════════════════════════════════════════
-// Bottom action bar — 4 buttons in a row, icon + label
+// Bottom action bar — 4 buttons, icon + label
 // ═══════════════════════════════════════════════════════════════════
 const ExportBar = React.memo(
   ({
@@ -652,89 +799,74 @@ const ExportBar = React.memo(
     onSaveImage: () => void;
     onShareWhatsapp: () => void;
     disabled: boolean;
-  }) => (
-    <View style={xb.wrap}>
-      <TouchableOpacity
-        onPress={onSaveDraft}
-        style={xb.item}
-        activeOpacity={0.8}
-      >
-        <View style={xb.iconWrap}>
-          <Icon name="content-save-outline" size={20} color={DARK.primary} />
-        </View>
-        <Text style={xb.label}>Draft</Text>
-      </TouchableOpacity>
+  }) => {
+    const { theme, xb } = useStyles();
+    const { colors } = theme;
 
-      <TouchableOpacity
-        onPress={onSavePdf}
-        disabled={disabled}
-        style={[xb.item, disabled && xb.itemDisabled]}
-        activeOpacity={0.8}
-      >
-        <View style={xb.iconWrap}>
-          <Icon name="file-pdf-box" size={20} color={DARK.primary} />
-        </View>
-        <Text style={xb.label}>PDF</Text>
-      </TouchableOpacity>
+    return (
+      <View style={xb.wrap}>
+        <TouchableOpacity
+          onPress={onSaveDraft}
+          style={xb.item}
+          activeOpacity={0.8}
+        >
+          <View style={xb.iconWrap}>
+            <Icon
+              name="content-save-outline"
+              size={20}
+              color={colors.primary}
+            />
+          </View>
+          <Text style={xb.label}>Draft</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={onSaveImage}
-        disabled={disabled}
-        style={[xb.item, disabled && xb.itemDisabled]}
-        activeOpacity={0.8}
-      >
-        <View style={xb.iconWrap}>
-          <Icon name="image-outline" size={20} color={DARK.primary} />
-        </View>
-        <Text style={xb.label}>Image</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onSavePdf}
+          disabled={disabled}
+          style={[xb.item, disabled && xb.itemDisabled]}
+          activeOpacity={0.8}
+        >
+          <View style={xb.iconWrap}>
+            <Icon name="file-pdf-box" size={20} color={colors.primary} />
+          </View>
+          <Text style={xb.label}>PDF</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={onShareWhatsapp}
-        disabled={disabled}
-        style={[xb.item, disabled && xb.itemDisabled]}
-        activeOpacity={0.8}
-      >
-        <View style={[xb.iconWrap, { backgroundColor: '#25D366' }]}>
-          <Icon name="whatsapp" size={20} color="#fff" />
-        </View>
-        <Text style={xb.label}>WhatsApp</Text>
-      </TouchableOpacity>
-    </View>
-  ),
+        <TouchableOpacity
+          onPress={onSaveImage}
+          disabled={disabled}
+          style={[xb.item, disabled && xb.itemDisabled]}
+          activeOpacity={0.8}
+        >
+          <View style={xb.iconWrap}>
+            <Icon name="image-outline" size={20} color={colors.primary} />
+          </View>
+          <Text style={xb.label}>Image</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onShareWhatsapp}
+          disabled={disabled}
+          style={[xb.item, disabled && xb.itemDisabled]}
+          activeOpacity={0.8}
+        >
+          <View style={[xb.iconWrap, xb.iconWrapWhatsapp]}>
+            <Icon name="whatsapp" size={20} color={WHATSAPP_ICON} />
+          </View>
+          <Text style={xb.label}>WhatsApp</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  },
 );
-const xb = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: DARK.bg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: DARK.border,
-    paddingTop: 10,
-    paddingHorizontal: 8,
-    paddingBottom: Platform.OS === 'ios' ? 26 : 12,
-  },
-  item: { flex: 1, alignItems: 'center', gap: 4 },
-  itemDisabled: { opacity: 0.4 },
-  iconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    backgroundColor: DARK.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: { fontSize: 11, fontWeight: '600', color: DARK.textMuted },
-});
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════════
 const List: React.FC = () => {
   const route = useRoute<RouteProps>();
+  const { theme, s } = useStyles();
+  const { colors } = theme;
 
   const listName = route.params?.listName ?? 'Meri List';
   const initialItems: SelectedP[] = route.params?.items ?? DEFAULT_ITEMS;
@@ -745,17 +877,17 @@ const List: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // header receipt icon ka state. Abhi is screen me preview modal render nahi
-  // hota, to icon dabane par kuch dikhega nahi (neeche handleOpenPreview dekho).
-  const [previewVisible, setPreviewVisible] = useState(false);
+  // hota, to icon dabane par kuch dikhega nahi (handleOpenPreview dekho).
+  const [, setPreviewVisible] = useState(false);
 
-  // ── search + category filter state (ported from CreateListScreen) ──
+  // ── search + category filter ──
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const itemList = useMemo(() => Object.values(items), [items]);
   const itemCount = itemList.length;
 
-  // what's actually rendered / exported — filtered by search + category
+  // jo render hota hai — search + category se filtered
   const filteredItems = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
     return itemList.filter(i => {
@@ -805,8 +937,7 @@ const List: React.FC = () => {
     [editingId],
   );
 
-  // Remove button lives inside the edit modal — closes the sheet and
-  // reuses the same confirm dialog as before.
+  // Remove button edit modal ke andar — sheet band karke wahi confirm dialog
   const handleEditRemove = useCallback(() => {
     if (!editingId) return;
     const id = editingId;
@@ -819,20 +950,20 @@ const List: React.FC = () => {
   const handleOpenPreview = useCallback(() => setPreviewVisible(true), []);
 
   // ── export handlers ──
-  // NOTE: exports use the FULL list (itemList), not the filtered/search
-  // view — filtering here is just to help you find an item to edit, it
-  // shouldn't silently drop items from the PDF/Image/WhatsApp export.
+  // NOTE: exports POORI list (itemList) use karte hain, filtered nahi —
+  // search sirf item dhundhne ke liye hai, export se items na girein.
   const buildPlainText = useCallback(() => {
     const lines = itemList.map((it, idx) => {
       const notePart = it.note ? `  (${it.note})` : '';
-      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${it.unit
-        }${notePart}`;
+      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${
+        it.unit
+      }${notePart}`;
     });
     return `🛒 ${listName}\n\n${lines.join('\n')}\n\nTotal items: ${itemCount}`;
   }, [itemList, listName, itemCount]);
 
   const handleSaveDraft = useCallback(() => {
-    // TODO: persist `items` to AsyncStorage / backend here
+    // TODO: `items` ko AsyncStorage / backend me persist karo
     Alert.alert('Draft Save Ho Gaya! ✅', `${itemCount} items save ho gaye.`);
   }, [itemCount]);
 
@@ -845,7 +976,7 @@ const List: React.FC = () => {
       if (supported) {
         await Linking.openURL(url);
       } else {
-        // fallback to native share sheet if WhatsApp isn't installed / scheme blocked
+        // WhatsApp na ho to native share sheet
         await Share.share({ message: text });
       }
     } catch {
@@ -859,18 +990,22 @@ const List: React.FC = () => {
   const handleSaveAsPDF = useCallback(async () => {
     if (itemCount === 0) return;
     try {
+      // PDF ek document hai (UI nahi), isliye uske colors theme se nahi aate
       const rowsHtml = itemList
         .map(
           (it, idx) => `
         <tr>
           <td style="padding:8px;border-bottom:1px solid #eee;">${idx + 1}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.name} (${it.nameHindi
-            })</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${it.name} (${
+            it.nameHindi
+          })</td>
           <td style="padding:8px;border-bottom:1px solid #eee;">${it.unit}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.quantity
-            }</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.note ?? ''
-            }</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${
+            it.quantity
+          }</td>
+          <td style="padding:8px;border-bottom:1px solid #eee;">${
+            it.note ?? ''
+          }</td>
         </tr>`,
         )
         .join('');
@@ -937,7 +1072,7 @@ const List: React.FC = () => {
 
   const editingItem = editingId ? items[editingId] : null;
 
-  // ═══ collapsible search + chips bar (ported from CreateListScreen) ═══
+  // ═══ collapsible search + chips bar ═══
   const [barHeight, setBarHeight] = useState(116);
   const barTranslateY = useRef(new Animated.Value(0)).current;
   const barHidden = useRef(false);
@@ -984,8 +1119,7 @@ const List: React.FC = () => {
   return (
     <View style={s.root}>
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-
-        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
+        {/* ═════════════════════════════ App Header ═════════════════════════════ */}
         <AppHeader
           title={listName}
           leftAction="back"
@@ -996,8 +1130,8 @@ const List: React.FC = () => {
           showThemeToggle={false}
         />
 
-        {/* Body: collapsible search/chips overlay + list, capture area below */}
-        <View style={{ flex: 1 }}>
+        {/* Body: collapsible search/chips overlay + list */}
+        <View style={s.body}>
           <Animated.View
             onLayout={e => setBarHeight(e.nativeEvent.layout.height)}
             style={[
@@ -1009,14 +1143,14 @@ const List: React.FC = () => {
               <Icon
                 name="magnify"
                 size={20}
-                color={DARK.textMuted}
-                style={{ marginRight: 8 }}
+                color={colors.textMuted}
+                style={s.searchIcon}
               />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search this list..."
-                placeholderTextColor={DARK.textMuted}
+                placeholderTextColor={colors.textMuted}
                 style={s.searchInput}
               />
               {searchQuery.length > 0 && (
@@ -1024,7 +1158,11 @@ const List: React.FC = () => {
                   onPress={() => setSearchQuery('')}
                   activeOpacity={0.75}
                 >
-                  <Icon name="close-circle" size={18} color={DARK.textMuted} />
+                  <Icon
+                    name="close-circle"
+                    size={18}
+                    color={colors.textMuted}
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -1036,11 +1174,10 @@ const List: React.FC = () => {
             />
           </Animated.View>
 
-          {/* This wraps only the item cards so "Save as Image" captures
-              exactly the list, not the search bar / chips above it. */}
+          {/* Sirf item cards ViewShot ke andar — "Save as Image" me search/chips nahi aate */}
           <ViewShot
             ref={captureRef}
-            style={{ flex: 1 }}
+            style={s.captureArea}
             options={{ format: 'png', quality: 0.95 }}
           >
             <FlatList
@@ -1055,15 +1192,13 @@ const List: React.FC = () => {
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
               ListEmptyComponent={
-                <View
-                  style={{ alignItems: 'center', paddingVertical: 64, gap: 10 }}
-                >
+                <View style={s.emptyWrap}>
                   <Icon
                     name="basket-off-outline"
                     size={48}
-                    color={DARK.textMuted}
+                    color={colors.textMuted}
                   />
-                  <Text style={{ color: DARK.textPrimary, fontWeight: '600' }}>
+                  <Text style={s.emptyTxt}>
                     {itemCount === 0 ? 'List khali hai' : 'Kuch nahi mila'}
                   </Text>
                 </View>
@@ -1091,43 +1226,5 @@ const List: React.FC = () => {
     </View>
   );
 };
-
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DARK.bg },
-  safeArea: { flex: 1, backgroundColor: DARK.bg },
-
-  // absolute overlay so hiding it on scroll doesn't leave a gap — the
-  // FlatList's paddingTop (=barHeight) reserves the space underneath.
-  collapsibleBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    backgroundColor: DARK.bg,
-    paddingBottom: 8,
-  },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: H_PADDING,
-    marginTop: 12,
-    marginBottom: 8,
-    backgroundColor: DARK.searchBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: DARK.textPrimary,
-    paddingVertical: 0,
-  },
-
-  listContent: { paddingHorizontal: H_PADDING },
-});
 
 export default List;

@@ -1,6 +1,6 @@
 // src/features/list/screens/NewListScreen.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  StatusBar,
   Platform,
   Alert,
 } from 'react-native';
@@ -18,35 +17,13 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-import {
-  AppStackParamList,
-  CreateStackParamList,
-  ListStackParamList,
-} from '../../../navigation/types/navigationTypes';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { useTheme } from '../../../app/providers/ThemeProvider';
 
 // ─── Navigation type ──────────────────────────────────────────────────────────
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
-
-// ─── Same pattern as CatalogScreen ───────────────────────────────────────────
-const DARK = {
-  bg: '#FFFFFF',
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F6FA',
-  border: '#DCE7EE',
-  primary: 'skyblue',
-  primaryMuted: '#EAF4FA',
-  textPrimary: '#263640',
-  textMuted: '#71818C',
-  chipBorder: '#D5E2E9',
-  searchBg: '#F3F7F7',
-  green: '#70A185',
-  red: '#D17F83',
-  accent: '#91A8A8',
-  inputBg: '#F3F7F7',
-};
-
-const H_PADDING = 16;
+type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ListType = 'monthly' | 'weekly' | 'festival' | 'custom';
@@ -98,33 +75,62 @@ const getMonthRange = () => {
   return { from: fmt(first), to: fmt(last) };
 };
 
-// ─── SectionLabel — same bilingual style as CategoryChips section ─────────────
+// ─── SectionLabel ─────────────────────────────────────────────────────────────
 const SectionLabel = React.memo(
-  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => (
-    <View style={sec.row}>
-      <Icon name={icon} size={14} color={DARK.primary} />
-      <Text style={sec.en}>{en}</Text>
-      <Text style={sec.slash}>/</Text>
-      <Text style={sec.hi}>{hi}</Text>
-    </View>
-  ),
-);
+  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => {
+    const { theme } = useTheme();
+    const { colors, typography, fontFamilies, spacing } = theme;
 
-const sec = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  en: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: DARK.primary,
-    letterSpacing: 0.8,
+    const sec = useMemo(
+      () =>
+        StyleSheet.create({
+          row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs + 2,
+            marginBottom: spacing.md + 2,
+          },
+          en: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.bold,
+            color: colors.primary,
+            letterSpacing: 0.8,
+          },
+          slash: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.regular,
+            color: colors.textMuted,
+            opacity: 0.5,
+          },
+          hi: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.semiBold,
+            color: colors.primary,
+          },
+        }),
+      [colors, typography, fontFamilies, spacing],
+    );
+
+    return (
+      <View style={sec.row}>
+        <Icon name={icon} size={14} color={colors.primary} />
+        <Text style={sec.en}>{en}</Text>
+        <Text style={sec.slash}>/</Text>
+        <Text style={sec.hi}>{hi}</Text>
+      </View>
+    );
   },
-  slash: { fontSize: 11, color: DARK.textMuted, opacity: 0.5 },
-  hi: { fontSize: 12, fontWeight: '600', color: DARK.primary },
-});
+);
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const NewListScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // primary ke upar ka text/icon (light me white, dark me dark)
+  const onPrimary = colors.appBackground;
 
   const [listName, setListName] = useState('');
   const [listType, setListType] = useState<ListType>('monthly');
@@ -150,15 +156,9 @@ const NewListScreen: React.FC = () => {
 
   return (
     <View style={styles.root}>
-
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-
-
-        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-        <AppHeader
-          title="New List"
-          leftIcon="menu"
-        />
+        {/* ═════════════════════════════ App Header ═════════════════════════════ */}
+        <AppHeader title="New List" />
 
         {/* ── Scrollable Form ── */}
         <ScrollView
@@ -175,23 +175,19 @@ const NewListScreen: React.FC = () => {
               hi="LIST KA NAAM"
             />
 
-            {/* List name input */}
-            {/* <Text style={styles.fieldLabel}>
-              List ka naam <Text style={styles.fieldLabelEn}>/ List name</Text>
-            </Text> */}
             <TextInput
               value={listName}
               onChangeText={setListName}
               placeholder="e.g. May 2025 ki List..."
-              placeholderTextColor={DARK.textMuted}
+              placeholderTextColor={colors.textMuted}
               style={[
                 styles.input,
-                { borderColor: listName ? DARK.primary : DARK.border },
+                { borderColor: listName ? colors.primary : colors.border },
               ]}
             />
 
             {/* List type */}
-            <Text style={[styles.fieldLabel, { marginTop: 14 }]}>
+            <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
               Type chuno <Text style={styles.fieldLabelEn}>/ List type</Text>
             </Text>
             <View style={styles.chipsWrap}>
@@ -210,13 +206,13 @@ const NewListScreen: React.FC = () => {
                     <Icon
                       name={opt.icon}
                       size={13}
-                      color={selected ? '#fff' : DARK.textMuted}
-                      style={{ marginRight: 5 }}
+                      color={selected ? onPrimary : colors.textMuted}
+                      style={styles.chipIcon}
                     />
                     <Text
                       style={[
                         styles.chipText,
-                        { color: selected ? '#fff' : DARK.textMuted },
+                        { color: selected ? onPrimary : colors.textMuted },
                       ]}
                     >
                       {opt.label}
@@ -241,8 +237,8 @@ const NewListScreen: React.FC = () => {
                   <Icon
                     name="calendar-start"
                     size={14}
-                    color={DARK.primary}
-                    style={{ marginRight: 6 }}
+                    color={colors.primary}
+                    style={styles.dateIcon}
                   />
                   <Text style={styles.dateText}>{from}</Text>
                 </TouchableOpacity>
@@ -251,7 +247,7 @@ const NewListScreen: React.FC = () => {
               <Icon
                 name="arrow-right"
                 size={16}
-                color={DARK.textMuted}
+                color={colors.textMuted}
                 style={styles.dateArrow}
               />
 
@@ -264,8 +260,8 @@ const NewListScreen: React.FC = () => {
                   <Icon
                     name="calendar-end"
                     size={14}
-                    color={DARK.primary}
-                    style={{ marginRight: 6 }}
+                    color={colors.primary}
+                    style={styles.dateIcon}
                   />
                   <Text style={styles.dateText}>{to}</Text>
                 </TouchableOpacity>
@@ -284,9 +280,9 @@ const NewListScreen: React.FC = () => {
                 styles.templateCard,
                 {
                   backgroundColor: useTemplate
-                    ? DARK.primaryMuted
-                    : DARK.inputBg,
-                  borderColor: useTemplate ? DARK.primary : DARK.border,
+                    ? `${colors.primary}26`
+                    : colors.cardBgVariant,
+                  borderColor: useTemplate ? colors.primary : colors.border,
                 },
               ]}
             >
@@ -300,15 +296,17 @@ const NewListScreen: React.FC = () => {
                 style={[
                   styles.useBtn,
                   {
-                    backgroundColor: useTemplate ? DARK.primary : 'transparent',
-                    borderColor: useTemplate ? DARK.primary : DARK.chipBorder,
+                    backgroundColor: useTemplate
+                      ? colors.primary
+                      : 'transparent',
+                    borderColor: useTemplate ? colors.primary : colors.border,
                   },
                 ]}
               >
                 <Text
                   style={[
                     styles.useBtnText,
-                    { color: useTemplate ? '#fff' : DARK.textMuted },
+                    { color: useTemplate ? onPrimary : colors.textMuted },
                   ]}
                 >
                   {useTemplate ? 'Used ✓' : 'Use'}
@@ -317,7 +315,7 @@ const NewListScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 16 }} />
+          <View style={styles.bottomSpacer} />
         </ScrollView>
 
         {/* ── Sticky Footer Buttons ── */}
@@ -337,8 +335,8 @@ const NewListScreen: React.FC = () => {
             <Icon
               name="plus-circle-outline"
               size={20}
-              color="#fff"
-              style={{ marginRight: 8 }}
+              color={onPrimary}
+              style={styles.btnIcon}
             />
             <Text style={styles.btnPrimaryText}>Create List</Text>
           </TouchableOpacity>
@@ -348,198 +346,189 @@ const NewListScreen: React.FC = () => {
   );
 };
 
-// ─── Styles — same scale as CatalogScreen ────────────────────────────────────
-const HEADER_H = Platform.OS === 'ios' ? 52 : 58;
+// ─── Styles (theme se) ────────────────────────────────────────────────────────
+const createStyles = (theme: Theme) => {
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
+    theme;
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: DARK.bg,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: DARK.bg,
-  },
+  const onPrimary = colors.appBackground;
+  const inputBg = colors.cardBgVariant;
 
-  // ── Scroll ──
-  scroll: { flex: 1 },
-  content: {
-    paddingHorizontal: H_PADDING,
-    paddingTop: 18,
-    paddingBottom: 8,
-  },
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.appBackground },
+    safeArea: { flex: 1, backgroundColor: colors.appBackground },
 
-  // ── Section card ──
-  section: {
-    backgroundColor: DARK.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 5,
-  },
+    // ── Scroll ──
+    scroll: { flex: 1 },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg + 2,
+      paddingBottom: spacing.sm,
+    },
+    bottomSpacer: { height: spacing.lg },
 
-  // ── Field label ──
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: DARK.textMuted,
-    marginBottom: 8,
-  },
-  fieldLabelEn: {
-    fontSize: 11,
-    fontWeight: '400',
-    color: DARK.textMuted,
-  },
+    // ── Section card ──
+    section: {
+      backgroundColor: colors.cardBg,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
 
-  // ── Input ──
-  input: {
-    height: 48,
-    backgroundColor: DARK.inputBg,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    fontWeight: '500',
-    color: DARK.textPrimary,
-  },
+    // ── Field label ──
+    fieldLabel: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.medium,
+      color: colors.textMuted,
+      marginBottom: spacing.sm,
+    },
+    fieldLabelSpaced: { marginTop: spacing.md + 2 },
+    fieldLabelEn: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
 
-  // ── Chips — same as CategoryChips ──
-  chipsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1.5,
-  },
-  chipActive: {
-    backgroundColor: DARK.primary,
-    borderColor: DARK.primary,
-  },
-  chipInactive: {
-    borderColor: DARK.chipBorder,
-    backgroundColor: DARK.inputBg,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
+    // ── Input ──
+    input: {
+      height: spacing.huge,
+      backgroundColor: inputBg,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md + 2,
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.medium,
+      color: colors.textPrimary,
+    },
 
-  // ── Date row ──
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  dateField: { flex: 1 },
-  dateArrow: { marginBottom: 12 },
-  dateBox: {
-    height: 44,
-    backgroundColor: DARK.inputBg,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  dateText: {
-    fontSize: 13,
-    color: DARK.textPrimary,
-    fontWeight: '500',
-  },
+    // ── Chips ──
+    chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    chip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1.5,
+    },
+    chipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    chipInactive: {
+      borderColor: colors.border,
+      backgroundColor: inputBg,
+    },
+    chipIcon: { marginRight: 5 },
+    chipText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.medium,
+    },
 
-  // ── Template card ──
-  templateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    borderWidth: 1.5,
-    borderRadius: 10,
-  },
-  templateInfo: { flex: 1 },
-  templateName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    marginBottom: 3,
-  },
-  templateMeta: {
-    fontSize: 12,
-    color: DARK.textMuted,
-  },
-  useBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1.5,
-  },
-  useBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+    // ── Date row ──
+    dateRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: spacing.sm,
+    },
+    dateField: { flex: 1 },
+    dateArrow: { marginBottom: spacing.md },
+    dateBox: {
+      height: 44,
+      backgroundColor: inputBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: borderRadius.md - 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.sm + 2,
+    },
+    dateIcon: { marginRight: 6 },
+    dateText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.medium,
+      color: colors.textPrimary,
+    },
 
-  // ── Footer ──
-  // ── Footer ──
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: H_PADDING,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: DARK.border,
-    gap: 10,
-  },
+    // ── Template card ──
+    templateCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md + 2,
+      borderWidth: 1.5,
+      borderRadius: borderRadius.md - 2,
+    },
+    templateInfo: { flex: 1 },
+    templateName: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+      marginBottom: 3,
+    },
+    templateMeta: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
+    useBtn: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: 7,
+      borderRadius: borderRadius.sm,
+      borderWidth: 1.5,
+    },
+    useBtnText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.semiBold,
+    },
 
-  btnPrimary: {
-    flex: 1,
-    height: 48,
-    backgroundColor: DARK.primary,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: DARK.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-
-  btnPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-
-  btnSecondary: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: DARK.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  btnSecondaryText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: DARK.textMuted,
-  },
-});
+    // ── Footer ──
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.appBackground,
+      gap: spacing.sm + 2,
+    },
+    btnPrimary: {
+      flex: 1,
+      height: spacing.huge,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.md,
+    },
+    btnIcon: { marginRight: spacing.sm },
+    btnPrimaryText: {
+      color: onPrimary,
+      fontSize: typography.md,
+      fontFamily: fontFamilies.bold,
+      letterSpacing: 0.3,
+    },
+    btnSecondary: {
+      flex: 1,
+      height: spacing.huge,
+      borderRadius: borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnSecondaryText: {
+      fontSize: typography.sm + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textMuted,
+    },
+  });
+};
 
 export default NewListScreen;

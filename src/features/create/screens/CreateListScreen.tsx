@@ -27,20 +27,13 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  RouteProp,
-  useNavigation,
-  useRoute,
-  DrawerActions,
-} from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import { AppStackParamList, CreateStackParamList } from '../../../navigation/types/navigationTypes';
+
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
-// import { CreateStackParamList } from '../../navigation/types/navigationTypes';
-// import { CreateStackParamList } from '../../../navigation/types/navigationTypes';
-// import AppHeader from '../../../shared/components/headers/AppHeader';
+import { useTheme } from '../../../app/providers/ThemeProvider';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -48,138 +41,24 @@ type NavProp = NativeStackNavigationProp<
   AppStackParamList,
   'CreateListScreen'
 >;
+type Theme = ReturnType<typeof useTheme>['theme'];
 
-// ═══════════════════════════════════════════════════════════════════
-// THEME SYSTEM — swap ACTIVE_THEME below to preview each palette.
-// All four share the same keys, so switching is a one-line change.
-// ═══════════════════════════════════════════════════════════════════
-const THEMES = {
-  ember: {
-    bg: '#ffffff',
-    surface: 'white',
-    surfaceHigh: '#2d1e16',
-    border: '#3a2418',
-    primary: 'skyblue',
-    primaryMuted: '#2d1800',
-    textPrimary: 'black',
-    textMuted: 'black',
-    chipBorder: '#584237',
-    searchBg: '#1e1208',
-    green: '#16a34a',
-    red: '#dc2626',
-    accent: '#fb923c',
-  },
-  skySlate: {
-    // bg: '#F7FAFC',
-    bg: '#FFFFFF',
-
-    surface: '#FFFFFF',
-
-    surfaceHigh: '#F0F6FA',
-    border: '#DCE7EE',
-    primary: 'skyblue',
-    primaryMuted: '#EAF4FA',
-    textPrimary: '#263640',
-    textMuted: '#71818C',
-    chipBorder: '#D5E2E9',
-    searchBg: '#F3F7F9',
-    green: '#5FA77A',
-    red: '#D97878',
-    accent: '#8AA7B8',
-  },
-  softPink: {
-    bg: '#FDF9FB',
-    surface: '#FFFFFF',
-    surfaceHigh: '#FAF3F6',
-    border: '#EDE1E6',
-    primary: '#DFA6B8',
-    primaryMuted: '#FCEFF3',
-    textPrimary: '#3B3438',
-    textMuted: '#897D83',
-    chipBorder: '#E7DBE0',
-    searchBg: '#FAF5F7',
-    green: '#70A383',
-    red: '#D58089',
-    accent: '#B79CA7',
-  },
-
-  cloudLavender: {
-    bg: '#F8FAFC',
-    surface: '#FFFFFF',
-    surfaceHigh: '#F2F5FA',
-    border: '#DEE5EE',
-
-    primary: '#7B9FC2',
-    primaryMuted: '#EDF3F9',
-
-    textPrimary: '#28343F',
-    textMuted: '#788592',
-
-    chipBorder: '#D9E1E9',
-    searchBg: '#F4F7FA',
-
-    green: '#6FA486',
-    red: '#D47F87',
-
-    accent: '#9A9FBC',
-  },
-  mist: {
-    bg: '#F8FAFA',
-    surface: '#FFFFFF',
-    surfaceHigh: '#F1F6F6',
-    border: '#DDE7E7',
-
-    primary: '#78A9B5',
-    primaryMuted: '#EAF4F5',
-
-    textPrimary: '#29383B',
-    textMuted: '#758589',
-
-    chipBorder: '#D8E3E4',
-    searchBg: '#F3F7F7',
-
-    green: '#70A185',
-    red: '#D17F83',
-
-    accent: '#91A8A8',
-  },
-  porcelainBlue: {
-    bg: '#FAFBFC',
-    surface: '#FFFFFF',
-    surfaceHigh: '#F3F6F9',
-    border: '#E0E6EB',
-
-    primary: '#82AFCB',
-    primaryMuted: '#EEF5F9',
-
-    textPrimary: '#29363F',
-    textMuted: '#7A8790',
-
-    chipBorder: '#DCE4E9',
-    searchBg: '#F5F8FA',
-
-    green: '#71A386',
-    red: '#D48389',
-
-    accent: '#9BAFBC',
-  },
-} as const;
-
-// 👇 Change this to 'ocean' | 'forest' | 'midnight' | 'ember' to test each theme
-// const ACTIVE_THEME: keyof typeof THEMES = 'porcelainBlue';
-const ACTIVE_THEME: keyof typeof THEMES = 'skySlate';
-
-const DARK = THEMES[ACTIVE_THEME];
-
+// ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 12;
 const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
 const IMAGE_H = CARD_W * 0.82;
-// const HEADER_H = Platform.OS === 'ios' ? 52 : 58;
-const HEADER_H = Platform.OS === 'ios' ? 52 : 52;
-
 const BOTTOM_BAR_H = 78;
+
+// ═══════════════════════════════════════════════════════════════════
+// Ye teeno photo / modal ke upar ke scrims hain — light/dark dono me dark hi
+// chahiye, isliye theme se nahi aate.
+// ═══════════════════════════════════════════════════════════════════
+const SCRIM = 'rgba(0,0,0,0.5)'; // modal backdrop
+const PHOTO_SCRIM = 'rgba(0,0,0,0.32)'; // selected card ke photo pe overlay
+const PHOTO_BADGE_BG = 'rgba(0,0,0,0.55)'; // photo pe note badge
+const PHOTO_ICON = '#FFFFFF'; // us badge ka icon
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Category {
@@ -315,17 +194,522 @@ const PRODUCTS: Product[] = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════
+// STYLES (theme se) — saare sub-components ke liye ek jagah
+// ═══════════════════════════════════════════════════════════════════
+const createStyles = (theme: Theme) => {
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
+    theme;
+
+  const onPrimary = colors.appBackground; // primary ke upar ka text/icon
+  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
+
+  return {
+    // ── Category chips ──
+    ch: StyleSheet.create({
+      scrollStyle: { flexGrow: 0, flexShrink: 0 },
+      row: {
+        flexDirection: 'row',
+        gap: spacing.sm,
+        paddingHorizontal: H_PADDING,
+        paddingVertical: spacing.xs,
+      },
+      chip: {
+        flexShrink: 0,
+        paddingHorizontal: spacing.md + 2,
+        paddingVertical: spacing.sm,
+        borderRadius: borderRadius.full,
+        borderWidth: 1,
+      },
+      active: { backgroundColor: colors.primary, borderColor: colors.primary },
+      inactive: { borderColor: colors.border },
+      text: { fontSize: typography.xs + 1, fontFamily: fontFamilies.medium },
+    }),
+
+    // ── Quantity stepper ──
+    qs: StyleSheet.create({
+      row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+      btn: {
+        width: 26,
+        height: 26,
+        borderRadius: 7,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      btnFilled: { backgroundColor: colors.primary },
+      count: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+        minWidth: 18,
+        textAlign: 'center',
+      },
+    }),
+
+    // ── Edit note modal ──
+    em: StyleSheet.create({
+      overlay: { flex: 1, justifyContent: 'flex-end' },
+      backdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: SCRIM,
+      },
+      sheet: {
+        backgroundColor: colors.cardBg,
+        borderTopLeftRadius: borderRadius.xl,
+        borderTopRightRadius: borderRadius.xl,
+        padding: spacing.xl,
+        paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xxl,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+      },
+      handle: {
+        width: 36,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: colors.border,
+        alignSelf: 'center',
+        marginBottom: spacing.md + 2,
+      },
+      headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md + 2,
+      },
+      headerTitle: {
+        fontSize: typography.md,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      productRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        marginBottom: spacing.xl,
+        padding: spacing.md,
+        backgroundColor: colors.cardBgVariant,
+        borderRadius: borderRadius.md,
+      },
+      thumb: {
+        width: 52,
+        height: 52,
+        borderRadius: borderRadius.md - 2,
+        backgroundColor: colors.appBackground,
+      },
+      pName: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      pHindi: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginTop: 2,
+      },
+      label: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.textMuted,
+        letterSpacing: 0.5,
+      },
+      qtyRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm + 2,
+        marginTop: spacing.sm,
+        marginBottom: spacing.xl,
+      },
+      qBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: borderRadius.md - 2,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      qBtnMinus: { backgroundColor: colors.cardBgVariant },
+      qBtnPlus: { backgroundColor: colors.primary },
+      qCount: {
+        fontSize: typography.xl,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+        minWidth: 32,
+        textAlign: 'center',
+      },
+      unitTag: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginLeft: spacing.xs,
+      },
+      noteHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+      },
+      charCount: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+      },
+      noteInput: {
+        backgroundColor: colors.cardBgVariant,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: borderRadius.md - 2,
+        padding: spacing.md,
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.regular,
+        color: colors.textPrimary,
+        marginBottom: spacing.lg + 2,
+        minHeight: 64,
+        textAlignVertical: 'top',
+      },
+      actionsRow: { flexDirection: 'row', gap: spacing.sm + 2 },
+      removeBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 50,
+        paddingHorizontal: spacing.lg,
+        borderRadius: borderRadius.md,
+        borderWidth: 1.5,
+        borderColor: colors.error,
+      },
+      removeTxt: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.error,
+      },
+      saveBtn: {
+        flex: 1,
+        height: 50,
+        backgroundColor: colors.primary,
+        borderRadius: borderRadius.md,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      saveTxt: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.bold,
+        color: onPrimary,
+      },
+      btnIcon: { marginRight: 6 },
+    }),
+
+    // ── Product card ──
+    // borderWidth hamesha 1.5; select hone par sirf color badalta hai, taaki
+    // grid reflow na ho.
+    pc: StyleSheet.create({
+      card: {
+        width: CARD_W,
+        backgroundColor: colors.cardBg,
+        borderRadius: borderRadius.lg,
+        overflow: 'hidden',
+        borderWidth: 1.5,
+        borderColor: 'transparent',
+        ...shadows.sm,
+      },
+      cardSelected: { borderColor: colors.primary },
+      imgWrap: {
+        width: '100%',
+        height: IMAGE_H,
+        backgroundColor: colors.cardBgVariant,
+        overflow: 'hidden',
+      },
+      img: { width: '100%', height: '100%' },
+      noteBadge: {
+        position: 'absolute',
+        top: 6,
+        left: 6,
+        width: 22,
+        height: 22,
+        borderRadius: 7,
+        backgroundColor: PHOTO_BADGE_BG,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      topPick: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: 5,
+        borderBottomLeftRadius: borderRadius.md - 2,
+      },
+      topPickTxt: {
+        fontSize: typography.xs - 2,
+        fontFamily: fontFamilies.bold,
+        color: onPrimary,
+        letterSpacing: 0.8,
+      },
+      overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: PHOTO_SCRIM,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      body: {
+        paddingHorizontal: spacing.sm + 2,
+        paddingTop: 9,
+        paddingBottom: spacing.sm + 2,
+        gap: 3,
+      },
+      name: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+        letterSpacing: 0.1,
+      },
+      hindi: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.hindi ?? fontFamilies.regular,
+        color: colors.textMuted,
+        marginBottom: 6,
+      },
+      bottomRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      },
+      unitPill: {
+        backgroundColor: colors.cardBgVariant,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 6,
+      },
+      unitTxt: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.textMuted,
+      },
+      addBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: borderRadius.md - 2,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      editBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: borderRadius.sm,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    }),
+
+    // ── Empty state ──
+    es: StyleSheet.create({
+      wrap: {
+        alignItems: 'center',
+        paddingVertical: spacing.giant,
+        gap: spacing.sm + 2,
+      },
+      title: {
+        color: colors.textPrimary,
+        fontSize: typography.md,
+        fontFamily: fontFamilies.semiBold,
+      },
+      sub: {
+        color: colors.textMuted,
+        fontSize: typography.xs + 1,
+        fontFamily: fontFamilies.regular,
+      },
+    }),
+
+    // ── List preview modal ──
+    pm: StyleSheet.create({
+      overlay: { flex: 1, justifyContent: 'flex-end' },
+      backdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: SCRIM,
+      },
+      sheet: {
+        backgroundColor: colors.cardBg,
+        borderTopLeftRadius: borderRadius.xl,
+        borderTopRightRadius: borderRadius.xl,
+        padding: spacing.xl,
+        paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xxl,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+      },
+      headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md + 2,
+      },
+      title: {
+        fontSize: typography.md,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      emptyTxt: {
+        color: colors.textMuted,
+        fontFamily: fontFamilies.regular,
+        textAlign: 'center',
+        paddingVertical: spacing.xxxl,
+      },
+      row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        paddingVertical: spacing.sm + 2,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+      },
+      thumb: {
+        width: 44,
+        height: 44,
+        borderRadius: borderRadius.sm,
+        backgroundColor: colors.appBackground,
+      },
+      rowName: {
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      rowSub: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginTop: 1,
+      },
+      rowNote: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.regular,
+        color: colors.textMuted,
+        marginTop: 2,
+      },
+    }),
+
+    // ── Bottom action bar ──
+    ab: StyleSheet.create({
+      wrap: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: H_PADDING,
+        paddingTop: spacing.xs + 2,
+        paddingBottom: Platform.OS === 'ios' ? 28 : spacing.xs + 2,
+        backgroundColor: colors.appBackground,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+        gap: spacing.sm,
+      },
+      circleBtn: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      continueBtn: {
+        flex: 1,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: colors.primary,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...shadows.sm,
+      },
+      continueDisabled: { opacity: 0.4 },
+      continueTxt: {
+        fontSize: typography.md,
+        fontFamily: fontFamilies.semiBold,
+        color: onPrimary,
+      },
+    }),
+
+    // ── Screen ──
+    s: StyleSheet.create({
+      root: { flex: 1, backgroundColor: colors.appBackground },
+      safeArea: { flex: 1, backgroundColor: colors.appBackground },
+      body: { flex: 1 },
+
+      // absolute overlay: hide hone par gap nahi bachta; FlatList ka
+      // paddingTop (=barHeight) neeche jagah reserve karta hai.
+      collapsibleBar: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 10,
+        backgroundColor: colors.appBackground,
+        paddingBottom: spacing.sm,
+      },
+      searchWrap: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: H_PADDING,
+        marginTop: spacing.md,
+        marginBottom: spacing.sm,
+        backgroundColor: colors.cardBgVariant,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+        paddingHorizontal: spacing.md,
+        height: 44,
+      },
+      searchIcon: { marginRight: spacing.sm },
+      searchInput: {
+        flex: 1,
+        fontSize: typography.sm,
+        fontFamily: fontFamilies.regular,
+        color: colors.textPrimary,
+        paddingVertical: 0,
+      },
+      gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
+    }),
+  };
+};
+
+// Theme ke hisaab se styles cache — har card/component apni stylesheet dobara
+// nahi banata. Theme badalne par (toggle) naya set ban jata hai.
+const stylesCache = new WeakMap<Theme, ReturnType<typeof createStyles>>();
+const useStyles = () => {
+  const { theme } = useTheme();
+  let st = stylesCache.get(theme);
+  if (!st) {
+    st = createStyles(theme);
+    stylesCache.set(theme, st);
+  }
+  return { theme, ...st };
+};
+
+// ═══════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════════
 
 // ─── Category Chips ───────────────────────────────────────────────
-// FIX (point 4): chips were compressing because the ScrollView itself had no
-// explicit flexShrink:0, and the chip Text had no numberOfLines. Inside a
-// horizontal ScrollView, RN can still let a row's children be squeezed by
-// sibling re-layouts (e.g. FlatList mounting below) unless every node in the
-// chain explicitly opts out of shrinking. flexShrink:0 on the ScrollView +
-// the chip + numberOfLines={1} on the text locks their size regardless of
-// how many products are in the grid below.
+// flexShrink:0 (ScrollView + chip) aur numberOfLines={1}: chips compress nahi
+// hote chahe neeche grid kitna bhi bada ho.
 const CategoryChips = React.memo(
   ({
     categories,
@@ -335,53 +719,42 @@ const CategoryChips = React.memo(
     categories: Category[];
     selected: string;
     onSelect: (id: string) => void;
-  }) => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={ch.row}
-      style={ch.scrollStyle}
-    >
-      {categories.map(cat => {
-        const active = selected === cat.id;
-        return (
-          <TouchableOpacity
-            key={cat.id}
-            onPress={() => onSelect(cat.id)}
-            activeOpacity={0.8}
-            style={[ch.chip, active ? ch.active : ch.inactive]}
-          >
-            <Text
-              style={[ch.text, { color: active ? '#fff' : DARK.textMuted }]}
-              numberOfLines={1}
+  }) => {
+    const { theme, ch } = useStyles();
+    const { colors } = theme;
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={ch.row}
+        style={ch.scrollStyle}
+      >
+        {categories.map(cat => {
+          const active = selected === cat.id;
+          return (
+            <TouchableOpacity
+              key={cat.id}
+              onPress={() => onSelect(cat.id)}
+              activeOpacity={0.8}
+              style={[ch.chip, active ? ch.active : ch.inactive]}
             >
-              {cat.label} / {cat.labelHindi}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  ),
+              <Text
+                style={[
+                  ch.text,
+                  { color: active ? colors.appBackground : colors.textMuted },
+                ]}
+                numberOfLines={1}
+              >
+                {cat.label} / {cat.labelHindi}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  },
 );
-const ch = StyleSheet.create({
-  scrollStyle: { flexGrow: 0, flexShrink: 0 },
-  row: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: H_PADDING,
-    paddingVertical: 4,
-  },
-  chip: {
-    flexShrink: 0,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  active: { backgroundColor: DARK.primary, borderColor: DARK.primary },
-  inactive: { borderColor: DARK.chipBorder },
-  text: { fontSize: 13, fontWeight: '500' },
-});
 
 // ─── Quantity Stepper ─────────────────────────────────────────────
 const QuantityStepper = React.memo(
@@ -393,47 +766,33 @@ const QuantityStepper = React.memo(
     quantity: number;
     onIncrease: () => void;
     onDecrease: () => void;
-  }) => (
-    <View style={qs.row}>
-      <TouchableOpacity
-        onPress={onDecrease}
-        style={qs.btn}
-        activeOpacity={0.75}
-      >
-        <Icon name="minus" size={13} color={DARK.primary} />
-      </TouchableOpacity>
-      <Text style={qs.count}>{quantity}</Text>
-      <TouchableOpacity
-        onPress={onIncrease}
-        style={[qs.btn, { backgroundColor: DARK.primary }]}
-        activeOpacity={0.75}
-      >
-        <Icon name="plus" size={13} color="#fff" />
-      </TouchableOpacity>
-    </View>
-  ),
-);
-const qs = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  btn: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  count: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    minWidth: 18,
-    textAlign: 'center',
-  },
-});
+  }) => {
+    const { theme, qs } = useStyles();
+    const { colors } = theme;
 
-// ─── Edit Note Modal — now a real Modal, keyboard-aware, with remove ────────
+    return (
+      <View style={qs.row}>
+        <TouchableOpacity
+          onPress={onDecrease}
+          style={qs.btn}
+          activeOpacity={0.75}
+        >
+          <Icon name="minus" size={13} color={colors.primary} />
+        </TouchableOpacity>
+        <Text style={qs.count}>{quantity}</Text>
+        <TouchableOpacity
+          onPress={onIncrease}
+          style={[qs.btn, qs.btnFilled]}
+          activeOpacity={0.75}
+        >
+          <Icon name="plus" size={13} color={colors.appBackground} />
+        </TouchableOpacity>
+      </View>
+    );
+  },
+);
+
+// ─── Edit Note Modal ──────────────────────────────────────────────
 const EditNoteModal = React.memo(
   ({
     visible,
@@ -452,10 +811,13 @@ const EditNoteModal = React.memo(
     onSave: (qty: number, note: string) => void;
     onRemove: () => void;
   }) => {
+    const { theme, em } = useStyles();
+    const { colors } = theme;
+
     const [qty, setQty] = useState(quantity);
     const [ntxt, setNtxt] = useState(note);
 
-    // keep local state in sync whenever a new product is opened for editing
+    // naya product edit hone par local state sync
     useEffect(() => {
       setQty(quantity);
       setNtxt(note);
@@ -488,7 +850,7 @@ const EditNoteModal = React.memo(
                 onPress={onClose}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Icon name="close" size={22} color={DARK.textMuted} />
+                <Icon name="close" size={22} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
@@ -508,16 +870,16 @@ const EditNoteModal = React.memo(
             <View style={em.qtyRow}>
               <TouchableOpacity
                 onPress={() => setQty(q => Math.max(1, q - 1))}
-                style={[em.qBtn, { backgroundColor: DARK.surfaceHigh }]}
+                style={[em.qBtn, em.qBtnMinus]}
               >
-                <Icon name="minus" size={16} color="#fff" />
+                <Icon name="minus" size={16} color={colors.textPrimary} />
               </TouchableOpacity>
               <Text style={em.qCount}>{qty}</Text>
               <TouchableOpacity
                 onPress={() => setQty(q => q + 1)}
-                style={[em.qBtn, { backgroundColor: DARK.primary }]}
+                style={[em.qBtn, em.qBtnPlus]}
               >
-                <Icon name="plus" size={16} color="#fff" />
+                <Icon name="plus" size={16} color={colors.appBackground} />
               </TouchableOpacity>
               <Text style={em.unitTag}>{product.unit} each</Text>
             </View>
@@ -531,7 +893,7 @@ const EditNoteModal = React.memo(
               value={ntxt}
               onChangeText={t => setNtxt(t.slice(0, 120))}
               placeholder="e.g. Patanjali brand lena..."
-              placeholderTextColor={DARK.textMuted}
+              placeholderTextColor={colors.textMuted}
               style={em.noteInput}
               multiline
               numberOfLines={2}
@@ -547,8 +909,8 @@ const EditNoteModal = React.memo(
                 <Icon
                   name="trash-can-outline"
                   size={16}
-                  color={DARK.red}
-                  style={{ marginRight: 6 }}
+                  color={colors.error}
+                  style={em.btnIcon}
                 />
                 <Text style={em.removeTxt}>Remove</Text>
               </TouchableOpacity>
@@ -560,8 +922,8 @@ const EditNoteModal = React.memo(
                 <Icon
                   name="check-circle-outline"
                   size={18}
-                  color="#fff"
-                  style={{ marginRight: 6 }}
+                  color={colors.appBackground}
+                  style={em.btnIcon}
                 />
                 <Text style={em.saveTxt}>Done / हो गया</Text>
               </TouchableOpacity>
@@ -572,128 +934,8 @@ const EditNoteModal = React.memo(
     );
   },
 );
-const em = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  sheet: {
-    backgroundColor: DARK.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    borderTopWidth: 1,
-    borderTopColor: DARK.border,
-  },
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: DARK.border,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  headerTitle: { fontSize: 16, fontWeight: '700', color: DARK.textPrimary },
-  productRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 20,
-    padding: 12,
-    backgroundColor: DARK.surfaceHigh,
-    borderRadius: 12,
-  },
-  thumb: { width: 52, height: 52, borderRadius: 10, backgroundColor: DARK.bg },
-  pName: { fontSize: 15, fontWeight: '700', color: DARK.textPrimary },
-  pHindi: { fontSize: 12, color: DARK.textMuted, marginTop: 2 },
-  label: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: DARK.textMuted,
-    letterSpacing: 0.5,
-  },
-  qtyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginTop: 8,
-    marginBottom: 20,
-  },
-  qBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qCount: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: DARK.textPrimary,
-    minWidth: 32,
-    textAlign: 'center',
-  },
-  unitTag: { fontSize: 12, color: DARK.textMuted, marginLeft: 4 },
-  noteHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  charCount: { fontSize: 11, color: DARK.textMuted },
-  noteInput: {
-    backgroundColor: DARK.searchBg,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
-    color: DARK.textPrimary,
-    marginBottom: 18,
-    minHeight: 64,
-    textAlignVertical: 'top',
-  },
-  actionsRow: { flexDirection: 'row', gap: 10 },
-  removeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: DARK.red,
-  },
-  removeTxt: { fontSize: 14, fontWeight: '700', color: DARK.red },
-  saveBtn: {
-    flex: 1,
-    height: 50,
-    backgroundColor: DARK.primary,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveTxt: { fontSize: 15, fontWeight: '700', color: '#fff' },
-});
 
 // ─── Product Card ─────────────────────────────────────────────────
-// FIX (point 5): borderWidth used to jump 1 -> 2 on selection, nudging every
-// card's box size and causing the whole grid to visibly reflow when an item
-// was added/removed. Border is now always 2px; only the color changes
-// (transparent <-> primary), so the box size never changes.
 const ProductCard = React.memo(
   ({
     product,
@@ -715,195 +957,106 @@ const ProductCard = React.memo(
     onDecrease: (id: string) => void;
     onEdit: (id: string) => void;
     onRemove: (id: string) => void;
-  }) => (
-    <View style={[pc.card, selected && pc.cardSelected]}>
-      {/* Image */}
-      <View style={pc.imgWrap}>
-        <Image
-          source={{ uri: product.imageUrl }}
-          style={pc.img}
-          resizeMode="cover"
-        />
+  }) => {
+    const { theme, pc } = useStyles();
+    const { colors } = theme;
 
-        {hasNote && (
-          <View style={pc.noteBadge}>
-            <Icon name="note-text-outline" size={12} color="#fff" />
-          </View>
-        )}
+    return (
+      <View style={[pc.card, selected && pc.cardSelected]}>
+        {/* Image */}
+        <View style={pc.imgWrap}>
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={pc.img}
+            resizeMode="cover"
+          />
 
-        {product.isTopPick && (
-          <View style={pc.topPick}>
-            <Text style={pc.topPickTxt}>TOP PICK</Text>
-          </View>
-        )}
-        {selected && (
-          // point 6: tapping the tick now removes the item directly
-          <TouchableOpacity
-            style={pc.overlay}
-            activeOpacity={0.8}
-            onPress={() => onRemove(product.id)}
-          >
-            <Icon name="check-circle" size={30} color={DARK.primary} />
-          </TouchableOpacity>
-        )}
-      </View>
+          {hasNote && (
+            <View style={pc.noteBadge}>
+              <Icon name="note-text-outline" size={12} color={PHOTO_ICON} />
+            </View>
+          )}
 
-      {/* Body */}
-      <View style={pc.body}>
-        <Text style={pc.name} numberOfLines={1}>
-          {product.name}
-        </Text>
-        <Text style={pc.hindi} numberOfLines={1}>
-          {product.nameHindi} • {product.unit}
-        </Text>
-
-        <View style={pc.bottomRow}>
-          {selected ? (
-            <>
-              <QuantityStepper
-                quantity={quantity}
-                onIncrease={() => onIncrease(product.id)}
-                onDecrease={() => onDecrease(product.id)}
-              />
-              <TouchableOpacity
-                onPress={() => onEdit(product.id)}
-                activeOpacity={0.8}
-                style={pc.editBtn}
-              >
-                <Icon name="pencil-outline" size={16} color={DARK.primary} />
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <View style={pc.unitPill}>
-                <Text style={pc.unitTxt}>{product.unit}</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => onAdd(product.id)}
-                activeOpacity={0.85}
-                style={pc.addBtn}
-              >
-                <Icon name="plus" size={18} color="#fff" />
-              </TouchableOpacity>
-            </>
+          {product.isTopPick && (
+            <View style={pc.topPick}>
+              <Text style={pc.topPickTxt}>TOP PICK</Text>
+            </View>
+          )}
+          {selected && (
+            // tick dabane par item seedha remove
+            <TouchableOpacity
+              style={pc.overlay}
+              activeOpacity={0.8}
+              onPress={() => onRemove(product.id)}
+            >
+              <Icon name="check-circle" size={30} color={colors.primary} />
+            </TouchableOpacity>
           )}
         </View>
+
+        {/* Body */}
+        <View style={pc.body}>
+          <Text style={pc.name} numberOfLines={1}>
+            {product.name}
+          </Text>
+          <Text style={pc.hindi} numberOfLines={1}>
+            {product.nameHindi} • {product.unit}
+          </Text>
+
+          <View style={pc.bottomRow}>
+            {selected ? (
+              <>
+                <QuantityStepper
+                  quantity={quantity}
+                  onIncrease={() => onIncrease(product.id)}
+                  onDecrease={() => onDecrease(product.id)}
+                />
+                <TouchableOpacity
+                  onPress={() => onEdit(product.id)}
+                  activeOpacity={0.8}
+                  style={pc.editBtn}
+                >
+                  <Icon
+                    name="pencil-outline"
+                    size={16}
+                    color={colors.primary}
+                  />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={pc.unitPill}>
+                  <Text style={pc.unitTxt}>{product.unit}</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => onAdd(product.id)}
+                  activeOpacity={0.85}
+                  style={pc.addBtn}
+                >
+                  <Icon name="plus" size={18} color={colors.appBackground} />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
       </View>
-    </View>
-  ),
+    );
+  },
 );
 
-const pc = StyleSheet.create({
-  card: {
-    width: CARD_W,
-    backgroundColor: DARK.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardSelected: { borderColor: DARK.primary },
-  imgWrap: {
-    width: '100%',
-    height: IMAGE_H,
-    backgroundColor: DARK.surfaceHigh,
-    overflow: 'hidden',
-  },
-  img: { width: '100%', height: '100%' },
-  noteBadge: {
-    position: 'absolute',
-    top: 6,
-    left: 6,
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  topPick: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: DARK.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderBottomLeftRadius: 10,
-  },
-  topPickTxt: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.8,
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.32)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  body: { paddingHorizontal: 10, paddingTop: 9, paddingBottom: 10, gap: 3 },
-  name: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    letterSpacing: 0.1,
-  },
-  hindi: { fontSize: 11, color: DARK.textMuted, marginBottom: 6 },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  unitPill: {
-    backgroundColor: DARK.surfaceHigh,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  unitTxt: { fontSize: 11, color: DARK.textMuted, fontWeight: '600' },
-  addBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 10,
-    backgroundColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+// ─── Empty state ──────────────────────────────────────────────────
+const EmptyList = React.memo(() => {
+  const { theme, es } = useStyles();
+  return (
+    <View style={es.wrap}>
+      <Icon name="basket-off-outline" size={52} color={theme.colors.textMuted} />
+      <Text style={es.title}>Koi product nahi mila</Text>
+      <Text style={es.sub}>Try another search or category</Text>
+    </View>
+  );
 });
 
-// ─── Empty state ──────────────────────────────────────────────────
-const EmptyList = React.memo(() => (
-  <View style={{ alignItems: 'center', paddingVertical: 64, gap: 10 }}>
-    <Icon name="basket-off-outline" size={52} color={DARK.textMuted} />
-    <Text style={{ color: DARK.textPrimary, fontSize: 16, fontWeight: '600' }}>
-      Koi product nahi mila
-    </Text>
-    <Text style={{ color: DARK.textMuted, fontSize: 13 }}>
-      Try another search or category
-    </Text>
-  </View>
-));
-
-// ─── List Preview Modal (opened from the header cart icon) ────────
+// ─── List Preview Modal (header ke receipt icon se khulta hai) ────
 const ListPreviewModal = React.memo(
   ({
     visible,
@@ -915,117 +1068,86 @@ const ListPreviewModal = React.memo(
     items: SelectedP[];
     onClose: () => void;
     onEdit: (id: string) => void;
-  }) => (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={pm.overlay}>
-        <TouchableOpacity
-          style={pm.backdrop}
-          activeOpacity={1}
-          onPress={onClose}
-        />
-        <View style={pm.sheet}>
-          <View style={em.handle} />
-          <View style={pm.headerRow}>
-            <Text style={pm.title}>List Preview ({items.length})</Text>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Icon name="close" size={22} color={DARK.textPrimary} />
-            </TouchableOpacity>
-          </View>
+  }) => {
+    const { theme, pm, em } = useStyles();
+    const { colors } = theme;
 
-          {items.length === 0 ? (
-            <Text style={pm.emptyTxt}>Abhi koi item select nahi hua</Text>
-          ) : (
-            <ScrollView
-              style={{ maxHeight: 420 }}
-              showsVerticalScrollIndicator={false}
-            >
-              {items.map(item => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={pm.row}
-                  activeOpacity={0.8}
-                  onPress={() => {
-                    onClose();
-                    onEdit(item.id);
-                  }}
-                >
-                  <Image source={{ uri: item.imageUrl }} style={pm.thumb} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={pm.rowName} numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text style={pm.rowSub}>
-                      {item.unit} · Qty {item.quantity}
-                    </Text>
-                    {!!item.note && (
-                      <Text style={pm.rowNote} numberOfLines={1}>
-                        <Icon
-                          name="note-text-outline"
-                          size={11}
-                          color={DARK.textMuted}
-                        />{' '}
-                        {item.note}
+    return (
+      <Modal
+        visible={visible}
+        transparent
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={pm.overlay}>
+          <TouchableOpacity
+            style={pm.backdrop}
+            activeOpacity={1}
+            onPress={onClose}
+          />
+          <View style={pm.sheet}>
+            <View style={em.handle} />
+            <View style={pm.headerRow}>
+              <Text style={pm.title}>List Preview ({items.length})</Text>
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Icon name="close" size={22} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {items.length === 0 ? (
+              <Text style={pm.emptyTxt}>Abhi koi item select nahi hua</Text>
+            ) : (
+              <ScrollView
+                style={{ maxHeight: 420 }}
+                showsVerticalScrollIndicator={false}
+              >
+                {items.map(item => (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={pm.row}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      onClose();
+                      onEdit(item.id);
+                    }}
+                  >
+                    <Image source={{ uri: item.imageUrl }} style={pm.thumb} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={pm.rowName} numberOfLines={1}>
+                        {item.name}
                       </Text>
-                    )}
-                  </View>
-                  <Icon name="pencil-outline" size={16} color={DARK.primary} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
+                      <Text style={pm.rowSub}>
+                        {item.unit} · Qty {item.quantity}
+                      </Text>
+                      {!!item.note && (
+                        <Text style={pm.rowNote} numberOfLines={1}>
+                          <Icon
+                            name="note-text-outline"
+                            size={11}
+                            color={colors.textMuted}
+                          />{' '}
+                          {item.note}
+                        </Text>
+                      )}
+                    </View>
+                    <Icon
+                      name="pencil-outline"
+                      size={16}
+                      color={colors.primary}
+                    />
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
         </View>
-      </View>
-    </Modal>
-  ),
+      </Modal>
+    );
+  },
 );
-const pm = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-  },
-  sheet: {
-    backgroundColor: DARK.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
-    borderTopWidth: 1,
-    borderTopColor: DARK.border,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  title: { fontSize: 16, fontWeight: '700', color: DARK.textPrimary },
-  emptyTxt: { color: DARK.textMuted, textAlign: 'center', paddingVertical: 32 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: DARK.border,
-  },
-  thumb: { width: 44, height: 44, borderRadius: 8, backgroundColor: DARK.bg },
-  rowName: { fontSize: 14, fontWeight: '700', color: DARK.textPrimary },
-  rowSub: { fontSize: 12, color: DARK.textMuted, marginTop: 1 },
-  rowNote: { fontSize: 11, color: DARK.textMuted, marginTop: 2 },
-});
 
 // ═══════════════════════════════════════════════════════════════════
 // BOTTOM ACTION BAR — Save (circle) · Continue (pill) · Share (circle)
@@ -1041,111 +1163,60 @@ const ActionBar = React.memo(
     onContinue: () => void;
     onShare: () => void;
     continueDisabled: boolean;
-  }) => (
-    <View style={ab.wrap}>
-      <TouchableOpacity
-        onPress={onSaveDraft}
-        activeOpacity={0.85}
-        style={[
-          ab.circleBtn,
-          {
-            borderWidth: 1,
-            borderColor: DARK.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-        ]}
-      >
-        <Icon name="content-save-outline" size={22} color={DARK.primary} />
-      </TouchableOpacity>
+  }) => {
+    const { theme, ab } = useStyles();
+    const { colors } = theme;
 
-      <TouchableOpacity
-        onPress={onContinue}
-        disabled={continueDisabled}
-        activeOpacity={0.9}
-        style={[ab.continueBtn, continueDisabled && ab.continueDisabled]}
-      >
-        <Text style={ab.continueTxt}>Continue</Text>
-        <Icon
-          name="arrow-right"
-          size={18}
-          color="#fff"
-          style={{ marginLeft: 6 }}
-        />
-      </TouchableOpacity>
+    return (
+      <View style={ab.wrap}>
+        <TouchableOpacity
+          onPress={onSaveDraft}
+          activeOpacity={0.85}
+          style={ab.circleBtn}
+        >
+          <Icon name="content-save-outline" size={22} color={colors.primary} />
+        </TouchableOpacity>
 
-      <TouchableOpacity
-        onPress={onShare}
-        activeOpacity={0.85}
-        style={[
-          ab.circleBtn,
-          {
-            borderWidth: 1,
-            borderColor: DARK.primary,
-            alignItems: 'center',
-            justifyContent: 'center',
-          },
-        ]}
-      >
-        <Icon name="share-variant-outline" size={20} color={DARK.primary} />
-      </TouchableOpacity>
-    </View>
-  ),
+        <TouchableOpacity
+          onPress={onContinue}
+          disabled={continueDisabled}
+          activeOpacity={0.9}
+          style={[ab.continueBtn, continueDisabled && ab.continueDisabled]}
+        >
+          <Text style={ab.continueTxt}>Continue</Text>
+          <Icon
+            name="arrow-right"
+            size={18}
+            color={colors.appBackground}
+            style={{ marginLeft: 6 }}
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={onShare}
+          activeOpacity={0.85}
+          style={ab.circleBtn}
+        >
+          <Icon
+            name="share-variant-outline"
+            size={20}
+            color={colors.primary}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  },
 );
-const ab = StyleSheet.create({
-  wrap: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: H_PADDING,
-    paddingTop: 6,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 6,
-    backgroundColor: DARK.bg,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: DARK.border,
-    gap: 8,
-  },
-  circleBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 0,
-  },
-  continueBtn: {
-    flex: 1,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: DARK.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 0,
-  },
-  continueDisabled: { opacity: 0.4 },
-  continueTxt: { fontSize: 16, fontWeight: '600', color: '#fff' },
-});
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════════
-const TempCreateListScreen: React.FC = () => {
+const CreateListScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavProp>();
+  const { theme, s } = useStyles();
+  const { colors } = theme;
 
-  const listId = route.params?.listId ?? 'draft';
   const listName = route.params?.listName ?? 'Nayi List';
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -1158,23 +1229,21 @@ const TempCreateListScreen: React.FC = () => {
 
   const selectedCount = Object.keys(selectedProducts).length;
 
-  // ── point 13: track what was last SAVED vs current state, so we know
-  // whether there really are unsaved changes before prompting on back ──
+  // last SAVED state vs current — back dabane par unsaved changes check
   const savedSnapshotRef = useRef<string>(JSON.stringify({}));
 
-  // ── point 9: intercept back (header button, gesture, hardware back —
-  // beforeRemove fires for all three on a stack navigator) ──
+  // back (header button, gesture, hardware) — stack me beforeRemove sabke liye fire hota hai
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
       const hasChanges =
         JSON.stringify(selectedProducts) !== savedSnapshotRef.current;
-      if (!hasChanges) return; // nothing to protect, let it go
+      if (!hasChanges) return;
       e.preventDefault();
       Alert.alert(
         'List save nahi hui',
         'Aap is list ko chhod ke jaana chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => { } },
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
           {
             text: 'Discard',
             style: 'destructive',
@@ -1268,9 +1337,9 @@ const TempCreateListScreen: React.FC = () => {
     setEditingId(null);
   }, [editingId, handleRemove]);
 
-  // point 13: this is the bottom-bar Save — it must NOT navigate away
+  // bottom-bar Save — navigate nahi karta
   const handleSaveDraft = useCallback(() => {
-    // TODO: persist to AsyncStorage / backend here
+    // TODO: AsyncStorage / backend me persist karo
     savedSnapshotRef.current = JSON.stringify(selectedProducts);
     Alert.alert(
       'Draft Save Ho Gaya! ✅',
@@ -1278,23 +1347,26 @@ const TempCreateListScreen: React.FC = () => {
     );
   }, [selectedProducts, selectedCount]);
 
-  // point 8: Continue moves forward in the flow
+  // Continue — flow me aage (List screen)
   const handleContinue = useCallback(() => {
     if (selectedCount === 0) return;
     savedSnapshotRef.current = JSON.stringify(selectedProducts);
-    // TODO: swap 'NextScreenName' for the actual next route in CreateStackParamList
     navigation.navigate('List', {
       listId: route.params?.listId,
       listName,
       items: Object.values(selectedProducts),
     });
-  }, [selectedCount, selectedProducts, navigation, route.params?.listId, listName]);
+  }, [
+    selectedCount,
+    selectedProducts,
+    navigation,
+    route.params?.listId,
+    listName,
+  ]);
 
   const handleShare = useCallback(() => {
     Alert.alert('Share', 'Share functionality aayegi!');
   }, []);
-
-  const handleBack = useCallback(() => navigation.goBack(), [navigation]);
 
   const selectedList = useMemo(
     () => Object.values(selectedProducts),
@@ -1330,7 +1402,7 @@ const TempCreateListScreen: React.FC = () => {
 
   const editingProduct = editingId ? selectedProducts[editingId] : null;
 
-  // ═══ point 14: collapsible search + chips bar ═══════════════════
+  // ═══ collapsible search + chips bar ═══
   const [barHeight, setBarHeight] = useState(116);
   const barTranslateY = useRef(new Animated.Value(0)).current;
   const barHidden = useRef(false);
@@ -1377,13 +1449,8 @@ const TempCreateListScreen: React.FC = () => {
   // ─── Render ─────────────────────────────────────────────────────
   return (
     <View style={s.root}>
-
       <SafeAreaView style={s.safeArea} edges={['top', 'bottom']}>
-        {/* ── Header: title only + cart-style preview icon ── */}
-
-
-        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-
+        {/* ═════════════════════════════ App Header ═════════════════════════════ */}
         <AppHeader
           title={listName}
           leftAction="back"
@@ -1393,8 +1460,9 @@ const TempCreateListScreen: React.FC = () => {
           rightBadge={selectedCount}
           showThemeToggle={false}
         />
+
         {/* ── Body: collapsible search/chips overlay + product grid ── */}
-        <View style={{ flex: 1 }}>
+        <View style={s.body}>
           <Animated.View
             onLayout={e => setBarHeight(e.nativeEvent.layout.height)}
             style={[
@@ -1406,14 +1474,14 @@ const TempCreateListScreen: React.FC = () => {
               <Icon
                 name="magnify"
                 size={20}
-                color={DARK.textMuted}
-                style={{ marginRight: 8 }}
+                color={colors.textMuted}
+                style={s.searchIcon}
               />
               <TextInput
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 placeholder="Search catalog / सूची खोजें..."
-                placeholderTextColor={DARK.textMuted}
+                placeholderTextColor={colors.textMuted}
                 style={s.searchInput}
               />
               {searchQuery.length > 0 && (
@@ -1421,7 +1489,11 @@ const TempCreateListScreen: React.FC = () => {
                   onPress={() => setSearchQuery('')}
                   activeOpacity={0.75}
                 >
-                  <Icon name="close-circle" size={18} color={DARK.textMuted} />
+                  <Icon
+                    name="close-circle"
+                    size={18}
+                    color={colors.textMuted}
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -1463,7 +1535,7 @@ const TempCreateListScreen: React.FC = () => {
           continueDisabled={selectedCount === 0}
         />
 
-        {/* ── List Preview Modal (from header cart icon) ── */}
+        {/* ── List Preview Modal ── */}
         <ListPreviewModal
           visible={previewVisible}
           items={selectedList}
@@ -1486,83 +1558,4 @@ const TempCreateListScreen: React.FC = () => {
   );
 };
 
-// ─── Styles ───────────────────────────────────────────────────────
-const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DARK.bg },
-  safeArea: { flex: 1, backgroundColor: DARK.bg },
-
-  header: {
-    height: HEADER_H,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: H_PADDING,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: DARK.border,
-    zIndex: 20,
-    backgroundColor: DARK.bg,
-    // backgroundColor: "red",
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    letterSpacing: 0.2,
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: 2,
-    right: 2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  cartBadgeTxt: { fontSize: 9, fontWeight: '800', color: '#fff' },
-
-  // point 14: absolute overlay so hiding it doesn't leave a gap — the
-  // FlatList's paddingTop (=barHeight) reserves the space underneath.
-  collapsibleBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    backgroundColor: DARK.bg,
-    paddingBottom: 8,
-  },
-
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: H_PADDING,
-    marginTop: 12,
-    marginBottom: 8,
-    backgroundColor: DARK.searchBg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    paddingHorizontal: 12,
-    height: 44,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: DARK.textPrimary,
-    paddingVertical: 0,
-  },
-
-  gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
-});
-
-export default TempCreateListScreen;
+export default CreateListScreen;

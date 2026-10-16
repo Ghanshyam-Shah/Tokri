@@ -1,6 +1,6 @@
 // src/features/catalog/screens/AddItem.tsx
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  StatusBar,
   Platform,
   Alert,
   Image,
@@ -18,31 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { useTheme } from '../../../app/providers/ThemeProvider';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
-// Navigation type ko apne navigationTypes ke according adjust kar lena
-type NavProp = NativeStackNavigationProp<any>;
-
-const DARK = {
-  bg: '#FFFFFF',
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F6FA',
-  border: '#DCE7EE',
-  primary: 'skyblue',
-  primaryMuted: '#EAF4FA',
-  textPrimary: '#263640',
-  textMuted: '#71818C',
-  chipBorder: '#D5E2E9',
-  inputBg: '#F3F7F7',
-  green: '#70A185',
-  red: '#D17F83',
-};
-
-const H_PADDING = 16;
+type NavProp = NativeStackNavigationProp<AppStackParamList>;
+type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Category type + defaults ──────────────────────────────────────────────
-// Same category set already used across CatalogScreen / CreateListScreen /
-// List.tsx, so chips look and behave consistently everywhere.
 interface Category {
   id: string;
   label: string;
@@ -63,32 +46,62 @@ const UNITS = ['kg', 'g', 'L', 'ml', 'pcs'];
 // Section Label
 // ─────────────────────────────────────────────────────────────
 const SectionLabel = React.memo(
-  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => (
-    <View style={sec.row}>
-      <Icon name={icon} size={14} color={DARK.primary} />
-      <Text style={sec.en}>{en}</Text>
-      <Text style={sec.slash}>/</Text>
-      <Text style={sec.hi}>{hi}</Text>
-    </View>
-  ),
-);
-const sec = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 },
-  en: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: DARK.primary,
-    letterSpacing: 0.8,
+  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => {
+    const { theme } = useTheme();
+    const { colors, typography, fontFamilies, spacing } = theme;
+
+    const sec = useMemo(
+      () =>
+        StyleSheet.create({
+          row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs + 2,
+            marginBottom: spacing.md + 2,
+          },
+          en: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.bold,
+            color: colors.primary,
+            letterSpacing: 0.8,
+          },
+          slash: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.regular,
+            color: colors.textMuted,
+            opacity: 0.5,
+          },
+          hi: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.hindi ?? fontFamilies.semiBold,
+            color: colors.primary,
+          },
+        }),
+      [colors, typography, fontFamilies, spacing],
+    );
+
+    return (
+      <View style={sec.row}>
+        <Icon name={icon} size={14} color={colors.primary} />
+        <Text style={sec.en}>{en}</Text>
+        <Text style={sec.slash}>/</Text>
+        <Text style={sec.hi}>{hi}</Text>
+      </View>
+    );
   },
-  slash: { fontSize: 11, color: DARK.textMuted, opacity: 0.5 },
-  hi: { fontSize: 12, fontWeight: '600', color: DARK.primary },
-});
+);
 
 // ─────────────────────────────────────────────────────────────
 // Main Screen
 // ─────────────────────────────────────────────────────────────
 const AddItem: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // primary ke upar jo text/icon aata hai (light me white, dark me dark)
+  const onPrimary = colors.appBackground;
 
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -120,8 +133,7 @@ const AddItem: React.FC = () => {
       );
       return;
     }
-    const finalCategory = selectedCategory;
-    if (!finalCategory) {
+    if (!selectedCategory) {
       Alert.alert('Category zaroori hai', 'Ek category select karein.');
       return;
     }
@@ -139,7 +151,7 @@ const AddItem: React.FC = () => {
       nameHindi: nameHindi.trim(),
       unit: `${quantity}${unit}`,
       price: Number(price),
-      categoryId: finalCategory,
+      categoryId: selectedCategory,
       imageUrl: imageUri ?? '',
       isTopPick,
     };
@@ -210,17 +222,31 @@ const AddItem: React.FC = () => {
     setAddingCategory(false);
   }, [newCategoryName, categories]);
 
+  // Ek chip (default ya Custom) ka content, selected state ke hisaab se
+  const renderChipContent = (selected: boolean, label: string) => (
+    <>
+      <Icon
+        name={selected ? 'check' : 'plus'}
+        size={14}
+        color={selected ? onPrimary : colors.textMuted}
+        style={styles.chipIcon}
+      />
+      <Text
+        style={[
+          styles.categoryChipText,
+          { color: selected ? onPrimary : colors.textMuted },
+        ]}
+      >
+        {label}
+      </Text>
+    </>
+  );
+
   return (
     <View style={styles.root}>
-
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-
-        {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-        <AppHeader
-          title="Add Item"
-          leftAction="back"
-          showThemeToggle={false}
-        />
+        {/* ═════════════════════════════ App Header ═════════════════════════════ */}
+        <AppHeader title="Add Item" leftAction="back" showThemeToggle={false} />
 
         <ScrollView
           style={styles.scroll}
@@ -228,9 +254,7 @@ const AddItem: React.FC = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* ═══════════════════════════════════════════════════
-              SECTION 1 — PRODUCT IMAGE (square + button below)
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 1 — PRODUCT IMAGE ── */}
           <View style={styles.section}>
             <SectionLabel
               icon="image-outline"
@@ -248,7 +272,7 @@ const AddItem: React.FC = () => {
               ) : (
                 <View style={styles.imagePlaceholderInner}>
                   <View style={styles.imageIconCircle}>
-                    <Icon name="image-plus" size={30} color={DARK.primary} />
+                    <Icon name="image-plus" size={30} color={colors.primary} />
                   </View>
                   <Text style={styles.selectImageText}>No image selected</Text>
                   <Text style={styles.imageHint}>Square image recommended</Text>
@@ -264,8 +288,8 @@ const AddItem: React.FC = () => {
               <Icon
                 name="image-outline"
                 size={16}
-                color={DARK.primary}
-                style={{ marginRight: 6 }}
+                color={colors.primary}
+                style={styles.btnIcon}
               />
               <Text style={styles.selectImageBtnTxt}>
                 {imageUri ? 'Change Image' : 'Select Image'}
@@ -273,9 +297,7 @@ const AddItem: React.FC = () => {
             </TouchableOpacity>
           </View>
 
-          {/* ═══════════════════════════════════════════════════
-              SECTION 2 — PRODUCT IDENTITY
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 2 — PRODUCT IDENTITY ── */}
           <View style={styles.section}>
             <SectionLabel
               icon="package-variant-closed"
@@ -291,31 +313,29 @@ const AddItem: React.FC = () => {
               value={name}
               onChangeText={setName}
               placeholder="e.g. Basmati Rice"
-              placeholderTextColor={DARK.textMuted}
+              placeholderTextColor={colors.textMuted}
               style={[
                 styles.input,
-                { borderColor: name ? DARK.primary : DARK.border },
+                { borderColor: name ? colors.primary : colors.border },
               ]}
             />
 
-            <Text style={[styles.fieldLabel, { marginTop: 14 }]}>
+            <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
               Hindi name <Text style={styles.fieldLabelEn}>/ Hindi naam</Text>
             </Text>
             <TextInput
               value={nameHindi}
               onChangeText={setNameHindi}
               placeholder="e.g. बासमती चावल"
-              placeholderTextColor={DARK.textMuted}
+              placeholderTextColor={colors.textMuted}
               style={[
                 styles.input,
-                { borderColor: nameHindi ? DARK.primary : DARK.border },
+                { borderColor: nameHindi ? colors.primary : colors.border },
               ]}
             />
           </View>
 
-          {/* ═══════════════════════════════════════════════════
-              SECTION 3 — CATEGORY
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 3 — CATEGORY ── */}
           <View style={styles.section}>
             <SectionLabel icon="shape-outline" en="CATEGORY" hi="श्रेणी" />
 
@@ -334,35 +354,15 @@ const AddItem: React.FC = () => {
                         : styles.categoryChipInactive,
                     ]}
                   >
-                    {selected ? (
-                      <Icon
-                        name="check"
-                        size={14}
-                        color="#fff"
-                        style={styles.chipIcon}
-                      />
-                    ) : (
-                      <Icon
-                        name="plus"
-                        size={14}
-                        color={DARK.textMuted}
-                        style={styles.chipIcon}
-                      />
+                    {renderChipContent(
+                      selected,
+                      `${cat.label} / ${cat.labelHindi}`,
                     )}
-                    <Text
-                      style={[
-                        styles.categoryChipText,
-                        { color: selected ? '#fff' : DARK.textMuted },
-                      ]}
-                    >
-                      {cat.label} / {cat.labelHindi}
-                    </Text>
                   </TouchableOpacity>
                 );
               })}
 
-              {/* Custom — a regular selectable category, same as any other chip.
-                  Selecting it doesn't open any input; it just gets picked. */}
+              {/* Custom — ek normal selectable category */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => handleCategoryPress('custom')}
@@ -373,35 +373,10 @@ const AddItem: React.FC = () => {
                     : styles.categoryChipInactive,
                 ]}
               >
-                {selectedCategory === 'custom' ? (
-                  <Icon
-                    name="check"
-                    size={14}
-                    color="#fff"
-                    style={styles.chipIcon}
-                  />
-                ) : (
-                  <Icon
-                    name="plus"
-                    size={14}
-                    color={DARK.textMuted}
-                    style={styles.chipIcon}
-                  />
-                )}
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    {
-                      color:
-                        selectedCategory === 'custom' ? '#fff' : DARK.textMuted,
-                    },
-                  ]}
-                >
-                  Custom
-                </Text>
+                {renderChipContent(selectedCategory === 'custom', 'Custom')}
               </TouchableOpacity>
 
-              {/* Add Category — permanently adds a new chip to the list above */}
+              {/* Add Category — list me naya chip permanently jodta hai */}
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setAddingCategory(v => !v)}
@@ -410,11 +385,11 @@ const AddItem: React.FC = () => {
                 <Icon
                   name="plus"
                   size={14}
-                  color={DARK.primary}
+                  color={colors.primary}
                   style={styles.chipIcon}
                 />
                 <Text
-                  style={[styles.categoryChipText, { color: DARK.primary }]}
+                  style={[styles.categoryChipText, { color: colors.primary }]}
                 >
                   Add Category
                 </Text>
@@ -427,15 +402,15 @@ const AddItem: React.FC = () => {
                   value={newCategoryName}
                   onChangeText={setNewCategoryName}
                   placeholder="New category name..."
-                  placeholderTextColor={DARK.textMuted}
-                  style={[styles.input, { flex: 1 }]}
+                  placeholderTextColor={colors.textMuted}
+                  style={[styles.input, styles.inputFlex]}
                   autoFocus
                 />
                 <TouchableOpacity
                   onPress={handleConfirmAddCategory}
                   style={styles.addCategoryConfirmBtn}
                 >
-                  <Icon name="check" size={20} color="#fff" />
+                  <Icon name="check" size={20} color={onPrimary} />
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => {
@@ -444,22 +419,20 @@ const AddItem: React.FC = () => {
                   }}
                   style={styles.addCategoryCancelBtn}
                 >
-                  <Icon name="close" size={20} color={DARK.textMuted} />
+                  <Icon name="close" size={20} color={colors.textMuted} />
                 </TouchableOpacity>
               </View>
             )}
           </View>
 
-          {/* ═══════════════════════════════════════════════════
-              SECTION 4 — PRICE
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 4 — PRICE ── */}
           <View style={styles.section}>
             <SectionLabel icon="cash" en="PRICE" hi="कीमत" />
 
             <View
               style={[
                 styles.priceInputWrapper,
-                { borderColor: price ? DARK.primary : DARK.border },
+                { borderColor: price ? colors.primary : colors.border },
               ]}
             >
               <Text style={styles.rupee}>₹</Text>
@@ -467,16 +440,14 @@ const AddItem: React.FC = () => {
                 value={price}
                 onChangeText={setPrice}
                 placeholder="e.g. 120"
-                placeholderTextColor={DARK.textMuted}
+                placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
                 style={styles.priceInput}
               />
             </View>
           </View>
 
-          {/* ═══════════════════════════════════════════════════
-              SECTION 5 — DEFAULT QUANTITY
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 5 — DEFAULT QUANTITY ── */}
           <View style={styles.section}>
             <SectionLabel
               icon="scale-balance"
@@ -511,17 +482,21 @@ const AddItem: React.FC = () => {
                 onPress={() => handleStep('minus')}
                 style={styles.stepBtn}
               >
-                <Icon name="chevron-left" size={24} color={DARK.textPrimary} />
+                <Icon
+                  name="chevron-left"
+                  size={24}
+                  color={colors.textPrimary}
+                />
               </TouchableOpacity>
 
-              <View style={styles.qtyInputWrapperNew}>
+              <View style={styles.qtyInputWrapper}>
                 <TextInput
                   value={quantity}
                   onChangeText={text => {
                     if (/^\d*\.?\d*$/.test(text)) setQuantity(text);
                   }}
                   keyboardType="decimal-pad"
-                  style={styles.qtyInputNew}
+                  style={styles.qtyInput}
                 />
                 <TouchableOpacity
                   onPress={() => setShowQuickSelect(!showQuickSelect)}
@@ -532,7 +507,7 @@ const AddItem: React.FC = () => {
                       showQuickSelect ? 'chevron-up' : 'format-list-bulleted'
                     }
                     size={20}
-                    color={showQuickSelect ? DARK.primary : DARK.textMuted}
+                    color={showQuickSelect ? colors.primary : colors.textMuted}
                   />
                 </TouchableOpacity>
               </View>
@@ -541,7 +516,11 @@ const AddItem: React.FC = () => {
                 onPress={() => handleStep('plus')}
                 style={styles.stepBtn}
               >
-                <Icon name="chevron-right" size={24} color={DARK.textPrimary} />
+                <Icon
+                  name="chevron-right"
+                  size={24}
+                  color={colors.textPrimary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -549,34 +528,34 @@ const AddItem: React.FC = () => {
               <View style={styles.quickSelectGrid}>
                 <Text style={styles.quickTitle}>Quick Select ({unit}):</Text>
                 <View style={styles.quickOptionsWrapper}>
-                  {getQuickOptions().map(val => (
-                    <TouchableOpacity
-                      key={val}
-                      onPress={() => setQuantity(val.toString())}
-                      style={[
-                        styles.quickOption,
-                        quantity === val.toString() && styles.quickOptionActive,
-                      ]}
-                    >
-                      <Text
+                  {getQuickOptions().map(val => {
+                    const active = quantity === val.toString();
+                    return (
+                      <TouchableOpacity
+                        key={val}
+                        onPress={() => setQuantity(val.toString())}
                         style={[
-                          styles.quickOptionText,
-                          quantity === val.toString() &&
-                          styles.quickOptionTextActive,
+                          styles.quickOption,
+                          active && styles.quickOptionActive,
                         ]}
                       >
-                        {val} {unit}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            styles.quickOptionText,
+                            active && styles.quickOptionTextActive,
+                          ]}
+                        >
+                          {val} {unit}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </View>
               </View>
             )}
           </View>
 
-          {/* ═══════════════════════════════════════════════════
-              SECTION 6 — TOP PICK
-          ═══════════════════════════════════════════════════ */}
+          {/* ── SECTION 6 — TOP PICK ── */}
           <View style={styles.section}>
             <SectionLabel icon="star-outline" en="VISIBILITY" hi="दिखावट" />
 
@@ -586,8 +565,10 @@ const AddItem: React.FC = () => {
               style={[
                 styles.topPickCard,
                 {
-                  backgroundColor: isTopPick ? DARK.primaryMuted : DARK.inputBg,
-                  borderColor: isTopPick ? DARK.primary : DARK.border,
+                  backgroundColor: isTopPick
+                    ? `${colors.primary}26`
+                    : colors.cardBgVariant,
+                  borderColor: isTopPick ? colors.primary : colors.border,
                 },
               ]}
             >
@@ -595,7 +576,7 @@ const AddItem: React.FC = () => {
                 <Icon
                   name={isTopPick ? 'star' : 'star-outline'}
                   size={22}
-                  color={DARK.primary}
+                  color={colors.primary}
                 />
               </View>
               <View style={styles.topPickInfo}>
@@ -608,22 +589,20 @@ const AddItem: React.FC = () => {
                 style={[
                   styles.checkBox,
                   {
-                    backgroundColor: isTopPick ? DARK.primary : 'transparent',
-                    borderColor: isTopPick ? DARK.primary : DARK.chipBorder,
+                    backgroundColor: isTopPick ? colors.primary : 'transparent',
+                    borderColor: isTopPick ? colors.primary : colors.border,
                   },
                 ]}
               >
-                {isTopPick && <Icon name="check" size={16} color="#fff" />}
+                {isTopPick && <Icon name="check" size={16} color={onPrimary} />}
               </View>
             </TouchableOpacity>
           </View>
 
-          <View style={{ height: 16 }} />
+          <View style={styles.bottomSpacer} />
         </ScrollView>
 
-        {/* ═════════════════════════════════════════════════════
-            STICKY FOOTER
-        ═════════════════════════════════════════════════════ */}
+        {/* ═════════════════════════ STICKY FOOTER ═════════════════════════ */}
         <View style={styles.footer}>
           <TouchableOpacity
             onPress={handleBack}
@@ -641,8 +620,8 @@ const AddItem: React.FC = () => {
             <Icon
               name="plus-circle-outline"
               size={20}
-              color="#fff"
-              style={{ marginRight: 8 }}
+              color={onPrimary}
+              style={styles.btnIcon}
             />
             <Text style={styles.btnPrimaryText}>Add Item</Text>
           </TouchableOpacity>
@@ -653,321 +632,382 @@ const AddItem: React.FC = () => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// Styles
+// Styles (theme se)
 // ─────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: DARK.bg },
-  safeArea: { flex: 1, backgroundColor: DARK.bg },
-  scroll: { flex: 1 },
-  content: { paddingHorizontal: H_PADDING, paddingTop: 18, paddingBottom: 8 },
+const createStyles = (theme: Theme) => {
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
+    theme;
 
-  section: {
-    backgroundColor: DARK.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 5,
-  },
+  const onPrimary = colors.appBackground;
+  const inputBg = colors.cardBgVariant;
+  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
 
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: DARK.textMuted,
-    marginBottom: 8,
-  },
-  fieldLabelEn: { fontSize: 11, fontWeight: '400', color: DARK.textMuted },
+  return StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.appBackground },
+    safeArea: { flex: 1, backgroundColor: colors.appBackground },
+    scroll: { flex: 1 },
+    content: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.lg + 2,
+      paddingBottom: spacing.sm,
+    },
+    bottomSpacer: { height: spacing.lg },
 
-  input: {
-    height: 48,
-    backgroundColor: DARK.inputBg,
-    borderWidth: 1,
-    borderColor: DARK.primary,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    fontSize: 14,
-    fontWeight: '500',
-    color: DARK.textPrimary,
-  },
+    section: {
+      backgroundColor: colors.cardBg,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      marginBottom: spacing.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
 
-  // ── Image (square) ──
-  imageSquare: {
-    width: '100%',
-    aspectRatio: 1,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: DARK.primary,
-    borderStyle: 'dashed',
-    backgroundColor: DARK.inputBg,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageSquareImg: { width: '100%', height: '100%' },
-  imagePlaceholderInner: { alignItems: 'center', justifyContent: 'center' },
-  imageIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: DARK.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  selectImageText: { fontSize: 14, fontWeight: '700', color: DARK.textPrimary },
-  imageHint: { fontSize: 10, color: DARK.textMuted, marginTop: 4 },
-  selectImageBtn: {
-    marginTop: 12,
-    height: 46,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: DARK.primary,
-    backgroundColor: DARK.primaryMuted,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectImageBtnTxt: { fontSize: 14, fontWeight: '700', color: DARK.primary },
+    fieldLabel: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.medium,
+      color: colors.textMuted,
+      marginBottom: spacing.sm,
+    },
+    fieldLabelSpaced: { marginTop: spacing.md + 2 },
+    fieldLabelEn: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
 
-  // ── Price ──
-  priceInputWrapper: {
-    height: 48,
-    backgroundColor: DARK.inputBg,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-  },
-  rupee: { fontSize: 18, fontWeight: '600', color: DARK.primary },
-  priceInput: {
-    flex: 1,
-    height: '100%',
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
-    color: DARK.textPrimary,
-  },
+    input: {
+      height: spacing.huge,
+      backgroundColor: inputBg,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md + 2,
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.medium,
+      color: colors.textPrimary,
+    },
+    inputFlex: { flex: 1 },
 
-  // ── Category chips ──
-  chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 13,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1.5,
-  },
-  categoryChipActive: {
-    backgroundColor: DARK.primary,
-    borderColor: DARK.primary,
-  },
-  categoryChipInactive: {
-    backgroundColor: DARK.inputBg,
-    borderColor: DARK.chipBorder,
-  },
-  addCategoryChip: {
-    backgroundColor: '#fff',
-    borderColor: DARK.primary,
-    borderStyle: 'dashed',
-  },
-  categoryChipText: { fontSize: 13, fontWeight: '500' },
-  chipIcon: { marginRight: 5 },
+    // ── Image (square) ──
+    imageSquare: {
+      width: '100%',
+      aspectRatio: 1,
+      borderRadius: borderRadius.lg,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      borderStyle: 'dashed',
+      backgroundColor: inputBg,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    imageSquareImg: { width: '100%', height: '100%' },
+    imagePlaceholderInner: { alignItems: 'center', justifyContent: 'center' },
+    imageIconCircle: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: primaryMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.sm + 2,
+    },
+    selectImageText: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+    },
+    imageHint: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+      marginTop: spacing.xs,
+    },
+    selectImageBtn: {
+      marginTop: spacing.md,
+      height: 46,
+      borderRadius: borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+      backgroundColor: primaryMuted,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    selectImageBtnTxt: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.bold,
+      color: colors.primary,
+    },
+    btnIcon: { marginRight: 6 },
 
-  addCategoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-  },
-  addCategoryConfirmBtn: {
-    width: 46,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: DARK.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addCategoryCancelBtn: {
-    width: 46,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: DARK.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    // ── Price ──
+    priceInputWrapper: {
+      height: spacing.huge,
+      backgroundColor: inputBg,
+      borderWidth: 1.5,
+      borderRadius: borderRadius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md + 2,
+    },
+    rupee: {
+      fontSize: typography.lg,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.primary,
+    },
+    priceInput: {
+      flex: 1,
+      height: '100%',
+      marginLeft: spacing.sm,
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.medium,
+      color: colors.textPrimary,
+    },
 
-  // ── Top pick ──
-  topPickCard: {
-    minHeight: 70,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 1.5,
-    borderRadius: 10,
-  },
-  topPickIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  topPickInfo: { flex: 1 },
-  topPickTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    marginBottom: 3,
-  },
-  topPickSubtitle: { fontSize: 11, color: DARK.textMuted },
-  checkBox: {
-    width: 24,
-    height: 24,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    // ── Category chips ──
+    chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+    categoryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md + 1,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1.5,
+    },
+    categoryChipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    categoryChipInactive: {
+      backgroundColor: inputBg,
+      borderColor: colors.border,
+    },
+    addCategoryChip: {
+      backgroundColor: colors.cardBg,
+      borderColor: colors.primary,
+      borderStyle: 'dashed',
+    },
+    categoryChipText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.medium,
+    },
+    chipIcon: { marginRight: 5 },
 
-  // ── Footer ──
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: H_PADDING,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: DARK.border,
-    gap: 10,
-  },
-  btnPrimary: {
-    flex: 1,
-    height: 48,
-    backgroundColor: DARK.primary,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: DARK.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  btnPrimaryText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  btnSecondary: {
-    flex: 1,
-    height: 48,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: DARK.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  btnSecondaryText: { fontSize: 15, fontWeight: '600', color: DARK.textMuted },
+    addCategoryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    addCategoryConfirmBtn: {
+      width: 46,
+      height: spacing.huge,
+      borderRadius: borderRadius.md,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addCategoryCancelBtn: {
+      width: 46,
+      height: spacing.huge,
+      borderRadius: borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  // ── Default quantity ──
-  unitContainer: {
-    flexDirection: 'row',
-    backgroundColor: DARK.inputBg,
-    borderRadius: 10,
-    padding: 4,
-    marginBottom: 12,
-  },
-  unitTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  unitTabActive: {
-    backgroundColor: '#FFF',
-    borderWidth: 1,
-    borderColor: DARK.border,
-  },
-  unitTabText: { fontSize: 13, fontWeight: '600', color: DARK.textMuted },
-  unitTabTextActive: { color: DARK.primary },
+    // ── Top pick ──
+    topPickCard: {
+      minHeight: 70,
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: spacing.md,
+      borderWidth: 1.5,
+      borderRadius: borderRadius.md,
+    },
+    topPickIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: borderRadius.md - 2,
+      backgroundColor: colors.cardBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.sm + 2,
+    },
+    topPickInfo: { flex: 1 },
+    topPickTitle: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+      marginBottom: 3,
+    },
+    topPickSubtitle: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
+    checkBox: {
+      width: 24,
+      height: 24,
+      borderRadius: 7,
+      borderWidth: 1.5,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
 
-  qtyControlRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  stepBtn: {
-    width: 44,
-    height: 48,
-    backgroundColor: DARK.inputBg,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  qtyInputWrapperNew: {
-    flex: 1,
-    height: 48,
-    backgroundColor: DARK.inputBg,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  qtyInputNew: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    color: DARK.textPrimary,
-    textAlign: 'center',
-  },
-  listIconBtn: {
-    paddingLeft: 10,
-    borderLeftWidth: 1,
-    borderLeftColor: DARK.border,
-  },
+    // ── Footer ──
+    footer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+      paddingBottom: Platform.OS === 'ios' ? spacing.xl : spacing.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.appBackground,
+      gap: spacing.sm + 2,
+    },
+    btnPrimary: {
+      flex: 1,
+      height: spacing.huge,
+      backgroundColor: colors.primary,
+      borderRadius: borderRadius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      ...shadows.md,
+    },
+    btnPrimaryText: {
+      color: onPrimary,
+      fontSize: typography.md,
+      fontFamily: fontFamilies.bold,
+      letterSpacing: 0.3,
+    },
+    btnSecondary: {
+      flex: 1,
+      height: spacing.huge,
+      borderRadius: borderRadius.md,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    btnSecondaryText: {
+      fontSize: typography.sm + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textMuted,
+    },
 
-  quickSelectGrid: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: DARK.surfaceHigh,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: DARK.border,
-  },
-  quickTitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: DARK.textMuted,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  quickOptionsWrapper: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  quickOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#fff',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: DARK.border,
-  },
-  quickOptionActive: {
-    borderColor: DARK.primary,
-    backgroundColor: DARK.primaryMuted,
-  },
-  quickOptionText: { fontSize: 12, fontWeight: '500', color: DARK.textPrimary },
-  quickOptionTextActive: { color: DARK.primary, fontWeight: '700' },
-});
+    // ── Default quantity ──
+    unitContainer: {
+      flexDirection: 'row',
+      backgroundColor: inputBg,
+      borderRadius: borderRadius.md,
+      padding: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    unitTab: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      borderRadius: borderRadius.sm,
+    },
+    unitTabActive: {
+      backgroundColor: colors.cardBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    unitTabText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textMuted,
+    },
+    unitTabTextActive: { color: colors.primary },
+
+    qtyControlRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    stepBtn: {
+      width: 44,
+      height: spacing.huge,
+      backgroundColor: inputBg,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    qtyInputWrapper: {
+      flex: 1,
+      height: spacing.huge,
+      backgroundColor: inputBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: borderRadius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.md,
+    },
+    qtyInput: {
+      flex: 1,
+      fontSize: typography.sm + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textPrimary,
+      textAlign: 'center',
+    },
+    listIconBtn: {
+      paddingLeft: spacing.sm + 2,
+      borderLeftWidth: 1,
+      borderLeftColor: colors.border,
+    },
+
+    quickSelectGrid: {
+      marginTop: spacing.md,
+      padding: spacing.md,
+      backgroundColor: colors.cardBgVariant,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quickTitle: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.bold,
+      color: colors.textMuted,
+      marginBottom: spacing.sm,
+      textTransform: 'uppercase',
+    },
+    quickOptionsWrapper: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+    },
+    quickOption: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: 6,
+      backgroundColor: colors.cardBg,
+      borderRadius: borderRadius.sm - 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quickOptionActive: {
+      borderColor: colors.primary,
+      backgroundColor: primaryMuted,
+    },
+    quickOptionText: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.medium,
+      color: colors.textPrimary,
+    },
+    quickOptionTextActive: {
+      color: colors.primary,
+      fontFamily: fontFamilies.bold,
+    },
+  });
+};
 
 export default AddItem;
