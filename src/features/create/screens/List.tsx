@@ -949,9 +949,8 @@ const List: React.FC = () => {
   const buildPlainText = useCallback(() => {
     const lines = itemList.map((it, idx) => {
       const notePart = it.note ? `  (${it.note})` : '';
-      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${
-        it.unit
-      }${notePart}`;
+      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${it.unit
+        }${notePart}`;
     });
     return `🛒 ${listName}\n\n${lines.join('\n')}\n\nTotal items: ${itemCount}`;
   }, [itemList, listName, itemCount]);
@@ -986,11 +985,10 @@ const List: React.FC = () => {
     try {
       // PDF ek document hai (UI nahi), isliye uske colors theme se nahi aate
       const pdfCell = `padding:8px;border-bottom:1px solid ${lightColors.border};`;
-const pdfHead = `padding:8px;text-align:left;`;
-
-const rowsHtml = itemList
-  .map(
-    (it, idx) => `
+      const pdfHead = `padding:8px;text-align:left;`;
+      const rowsHtml = itemList
+        .map(
+          (it, idx) => `
   <tr>
     <td style="${pdfCell}">${idx + 1}</td>
     <td style="${pdfCell}">${it.name} (${it.nameHindi})</td>
@@ -998,10 +996,10 @@ const rowsHtml = itemList
     <td style="${pdfCell}">${it.quantity}</td>
     <td style="${pdfCell}">${it.note ?? ''}</td>
   </tr>`,
-  )
-  .join('');
+        )
+        .join('');
 
-const html = `
+      const html = `
   <html><body style="font-family:sans-serif;padding:16px;color:${lightColors.textPrimary};">
     <h2>${listName}</h2>
     <table style="width:100%;border-collapse:collapse;">

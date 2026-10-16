@@ -18,6 +18,16 @@ export interface ColorPalette {
   primary: string;
   textPrimary: string;
   textSecondary: string;
+
+  onPrimary: string;        // primary ke upar ka text/icon
+  primaryMuted: string;     // primary ka halka tint (chips, pills, selected bg)
+  overlay: string;          // modal backdrop
+  photoScrim: string;       // photo ke upar dark overlay (selected card)
+  photoBadgeBg: string;     // photo ke upar chhota badge
+  onDark: string;           // dark scrim/brand surface ke upar white icon
+  whatsapp: string;         // WhatsApp brand green
+  themeToggleSun: string;   // header toggle: light mode me sun
+  themeToggleMoon: string;  // header toggle: dark mode me moon
 }
 
 export interface TypographyScale {
