@@ -1,180 +1,149 @@
 // src/features/catalog/components/ProductCard.tsx
+// Catalog-management card: image + naam + unit + Edit button.
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
   Image,
   StyleSheet,
-  Dimensions,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+import { useTheme } from '../../../app/providers/ThemeProvider';
+import { AppTheme } from '../../../theme/types/theme.types';
 import { Product } from '../types/types';
+import { CARD_W, IMAGE_H } from '../constants/layout';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-const CARD_GAP = 12;
-const H_PADDING = 16;
-const CARD_WIDTH = (SCREEN_WIDTH - H_PADDING * 2 - CARD_GAP) / 2;
-const IMAGE_HEIGHT = CARD_WIDTH * 0.85;
-
-const DARK = {
-  bg: '#1c110b',
-  surface: '#251913',
-  surfaceHigh: '#2d1e16',
-  border: '#3a2418',
-  primary: '#a78b7d',
-  textPrimary: '#f6ded3',
-  textMuted: '#a78b7d',
-};
-
-interface ProductCardProps {
+interface Props {
   product: Product;
-  inList: boolean;
-  onAddPress: (id: string) => void;
+  onEdit: (id: string) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
-  product,
-  inList,
-  onAddPress,
-}) => {
+const ProductCard = ({ product, onEdit }: Props) => {
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <View style={styles.card}>
-      {/* Image */}
-      <View style={styles.imageWrap}>
+      <View style={styles.imgWrap}>
         <Image
           source={{ uri: product.imageUrl }}
-          style={styles.image}
+          style={styles.img}
           resizeMode="cover"
         />
-
         {product.isTopPick && (
-          <View style={styles.topPickBadge}>
-            <Text style={styles.topPickText}>TOP PICK</Text>
+          <View style={styles.topPick}>
+            <Text style={styles.topPickTxt}>TOP PICK</Text>
           </View>
         )}
       </View>
 
-      {/* Card Body */}
-      <View style={styles.cardBody}>
-        <Text style={styles.productName} numberOfLines={1}>
+      <View style={styles.body}>
+        <Text style={styles.name} numberOfLines={1}>
           {product.name}
         </Text>
-
-        <Text style={styles.productHindi} numberOfLines={1}>
-          {product.nameHindi} • {product.unit}
+        <Text style={styles.hindi} numberOfLines={1}>
+          {product.nameHindi}
         </Text>
 
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{product.price.toFixed(2)}</Text>
+        <TouchableOpacity
+          onPress={() => onEdit(product.id)}
+          activeOpacity={0.85}
+          style={styles.editBtn}
+        >
+          <Text style={styles.editBtnUnit}>{product.unit}</Text>
 
-          <TouchableOpacity
-            onPress={() => onAddPress(product.id)}
-            activeOpacity={0.85}
-            style={[styles.addBtn, inList && styles.addBtnActive]}
-          >
-            <Icon name={inList ? 'check' : 'plus'} size={18} color="#fff" />
-          </TouchableOpacity>
-        </View>
+          <View style={styles.editBtnLeft}>
+            <Icon name="pencil-outline" size={15} color={colors.primary} />
+            <Text style={styles.editBtnTxt}>Edit</Text>
+          </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: DARK.surface,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: DARK.border,
+const createStyles = (theme: AppTheme) => {
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
+    theme;
 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 5,
-  },
+  return StyleSheet.create({
+    card: {
+      width: CARD_W,
+      backgroundColor: colors.cardBg,
+      borderRadius: borderRadius.lg,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
+    imgWrap: {
+      width: '100%',
+      height: IMAGE_H,
+      backgroundColor: colors.cardBgVariant,
+      overflow: 'hidden',
+    },
+    img: { width: '100%', height: '100%' },
+    topPick: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      backgroundColor: colors.primary,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 5,
+      borderBottomLeftRadius: borderRadius.md - 2,
+    },
+    topPickTxt: {
+      fontSize: typography.xs - 2,
+      fontFamily: fontFamilies.bold,
+      color: colors.onPrimary,
+      letterSpacing: 0.8,
+    },
+    body: {
+      paddingHorizontal: spacing.sm + 2,
+      paddingTop: 9,
+      paddingBottom: spacing.sm + 2,
+      gap: 2,
+    },
+    name: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+      letterSpacing: 0.1,
+    },
+    hindi: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.hindi ?? fontFamilies.regular,
+      color: colors.textMuted,
+      marginBottom: spacing.sm,
+    },
+    editBtn: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.md - 2,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.primaryMuted,
+    },
+    editBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+    editBtnTxt: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.bold,
+      color: colors.primary,
+    },
+    editBtnUnit: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textMuted,
+    },
+  });
+};
 
-  imageWrap: {
-    width: '100%',
-    height: IMAGE_HEIGHT,
-    backgroundColor: DARK.surfaceHigh,
-    overflow: 'hidden',
-  },
-
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-
-  topPickBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: DARK.primary,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderBottomLeftRadius: 10,
-  },
-
-  topPickText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.8,
-  },
-
-  cardBody: {
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 12,
-    gap: 3,
-  },
-
-  productName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    letterSpacing: 0.1,
-  },
-
-  productHindi: {
-    fontSize: 12,
-    color: DARK.textMuted,
-    marginBottom: 6,
-  },
-
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 2,
-  },
-
-  price: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    letterSpacing: 0.2,
-  },
-
-  addBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: DARK.primary,
-
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  addBtnActive: {
-    backgroundColor: '#16a34a',
-  },
-});
-
-export default ProductCard;
+export default React.memo(ProductCard);

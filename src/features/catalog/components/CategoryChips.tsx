@@ -1,60 +1,46 @@
 // src/features/catalog/components/CategoryChips.tsx
 
-import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
 
-interface Category {
-  id: string;
-  label: string;
-  labelHindi: string;
-}
+import { useTheme } from '../../../app/providers/ThemeProvider';
+import { AppTheme } from '../../../theme/types/theme.types';
+import { Category } from '../data/catalogData';
+import { H_PADDING } from '../constants/layout';
 
-interface CategoryChipsProps {
+interface Props {
   categories: Category[];
-  selectedCategory: string;
-  onCategorySelect: (categoryId: string) => void;
+  selected: string;
+  onSelect: (id: string) => void;
 }
 
-const DARK = {
-  primary: '#a78b7d',
-  textMuted: '#a78b7d',
-  chipBorder: '#584237',
-};
+const CategoryChips = ({ categories, selected, onSelect }: Props) => {
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
-const H_PADDING = 16;
-
-const CategoryChips: React.FC<CategoryChipsProps> = ({
-  categories,
-  selectedCategory,
-  onCategorySelect,
-}) => {
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipsRow}
-      style={styles.chipsScrollView}
+      contentContainerStyle={styles.row}
+      style={styles.scroll}
     >
       {categories.map(cat => {
-        const active = selectedCategory === cat.id;
-
+        const active = selected === cat.id;
         return (
           <TouchableOpacity
             key={cat.id}
+            onPress={() => onSelect(cat.id)}
             activeOpacity={0.8}
-            onPress={() => onCategorySelect(cat.id)}
-            style={[
-              styles.chip,
-              active ? styles.chipActive : styles.chipInactive,
-            ]}
+            style={[styles.chip, active ? styles.active : styles.inactive]}
           >
             <Text
               style={[
-                styles.chipText,
-                {
-                  color: active ? '#fff' : DARK.textMuted,
-                },
+                styles.text,
+                { color: active ? colors.onPrimary : colors.textMuted },
               ]}
+              numberOfLines={1}
             >
               {cat.label} / {cat.labelHindi}
             </Text>
@@ -65,38 +51,28 @@ const CategoryChips: React.FC<CategoryChipsProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  chipsScrollView: {
-    flexGrow: 0,
-  },
+const createStyles = (theme: AppTheme) => {
+  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
 
-  chipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: H_PADDING,
-    paddingBottom: 14,
-  },
-
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1.5,
-  },
-
-  chipActive: {
-    backgroundColor: DARK.primary,
-    borderColor: DARK.primary,
-  },
-
-  chipInactive: {
-    borderColor: DARK.chipBorder,
-  },
-
-  chipText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-});
+  return StyleSheet.create({
+    scroll: { flexGrow: 0, flexShrink: 0 },
+    row: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: H_PADDING,
+      paddingVertical: spacing.xs,
+    },
+    chip: {
+      flexShrink: 0,
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      borderWidth: 1,
+    },
+    active: { backgroundColor: colors.primary, borderColor: colors.primary },
+    inactive: { borderColor: colors.border },
+    text: { fontSize: typography.xs + 1, fontFamily: fontFamilies.medium },
+  });
+};
 
 export default React.memo(CategoryChips);
