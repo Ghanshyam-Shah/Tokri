@@ -71,6 +71,7 @@ export default function BottomTabs() {
         headerShown: false,
         tabBarShowLabel: true,
 
+        // tabBarActiveTintColor: colors.bottomTabIconBg,
         tabBarActiveTintColor: colors.bottomTabIconActive,
         tabBarInactiveTintColor: colors.bottomTabIcon,
 
