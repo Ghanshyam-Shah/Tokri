@@ -61,8 +61,8 @@ const CustomAddButton = ({ onPress }: BottomTabBarButtonProps) => {
 
 // ─── Navigator ────────────────────────────────────────────────────────────────
 export default function BottomTabs() {
-  const { theme, isDark } = useTheme();
-  const { colors, fontFamilies } = theme;
+  const { theme } = useTheme();
+  const { colors, fontFamilies, typography, shadows } = theme;
   const insets = useSafeAreaInsets();
 
   return (
@@ -81,20 +81,16 @@ export default function BottomTabs() {
           backgroundColor: colors.bottomTabBar,
           borderTopWidth: 1,
           borderTopColor: colors.border,
-          elevation: 8,
-          shadowColor: '#000',
-          shadowOpacity: isDark ? 0.4 : 0.08,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: -2 },
+          ...shadows.md,
+          shadowOffset: { width: 0, height: -2 }, // shadow upar ki taraf
         },
 
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: typography.xs - 1,
           fontFamily: fontFamilies.medium,
           marginTop: 2,
         },
 
-        // Active tab ke icon ke peeche pill (bottomTabIconBg)
         tabBarIcon: ({ focused, color }) => {
           const icons = TAB_ICONS[route.name];
           if (!icons) return null;
@@ -102,7 +98,8 @@ export default function BottomTabs() {
             <View
               style={[
                 styles.iconPill,
-                // focused && { backgroundColor: colors.bottomTabIconBg },  // This is Bottom tab bar icon bg color
+                // Active tab ke peeche pill chahiye to ye line uncomment karo:
+                // focused && { backgroundColor: colors.bottomTabIconBg },
               ]}
             >
               <Ionicons

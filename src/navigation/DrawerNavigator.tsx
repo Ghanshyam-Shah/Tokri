@@ -72,7 +72,7 @@ const DrawerNavigator = () => {
       screenOptions={{
         headerShown: false,
         drawerActiveTintColor: colors.headerContent,
-        drawerActiveBackgroundColor: `${colors.primary}26`, // primary 6-digit hex hona chahiye
+        drawerActiveBackgroundColor: colors.primaryMuted, // primary 6-digit hex hona chahiye
         drawerInactiveTintColor: colors.textMuted,
         drawerLabelStyle: {
           fontFamily: fontFamilies.medium,

@@ -224,7 +224,7 @@ const CategoryChips = React.memo(
               <Text
                 style={[
                   ch.text,
-                  { color: active ? colors.appBackground : colors.textMuted },
+                  { color: active ? colors.onPrimary : colors.textMuted },
                 ]}
                 numberOfLines={1}
               >
@@ -321,7 +321,7 @@ const createCardStyles = (theme: Theme) => {
     topPickTxt: {
       fontSize: typography.xs - 2,
       fontFamily: fontFamilies.bold,
-      color: colors.appBackground,
+      color: colors.onPrimary,
       letterSpacing: 0.8,
     },
     body: {
@@ -352,7 +352,7 @@ const createCardStyles = (theme: Theme) => {
       borderRadius: borderRadius.md - 2,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: `${colors.primary}26`, // primary 6-digit hex hona chahiye
+      backgroundColor: colors.primaryMuted, // primary 6-digit hex hona chahiye
     },
     editBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     editBtnTxt: {

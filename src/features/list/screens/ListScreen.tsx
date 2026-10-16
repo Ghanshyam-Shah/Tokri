@@ -1,33 +1,20 @@
-import React, { useState } from 'react';
+// src/features/list/screens/ListScreen.tsx  (apna path rakhna)
+
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Platform,
-  StatusBar,
 } from 'react-native';
-import { DrawerActions, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import { useTheme } from '../../../app/providers/ThemeProvider';
 
-// ─── Theme ────────────────────────────────────────────────────────────────
-const DARK = {
-  bg: '#F8FAFC', // Slightly off-white for better contrast with cards
-  surface: '#FFFFFF',
-  surfaceHigh: '#F0F6FA',
-  border: '#E2E8F0',
-  primary: '#0EA5E9', // Sky blue - rich and vibrant
-  primaryMuted: '#E0F2FE',
-  textPrimary: '#0F172A',
-  textMuted: '#64748B',
-  chipBorder: '#CBD5E1',
-  green: '#10B981',
-  orange: '#F59E0B',
-};
+type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Mock Data ────────────────────────────────────────────────────────────
 type ListStatus = 'Draft' | 'Completed';
@@ -86,7 +73,10 @@ const FILTERS = ['All', 'Monthly', 'Weekly', 'Festival', 'Drafts'];
 
 // ─── Main Component ───────────────────────────────────────────────────────
 const ListScreen = () => {
-  const navigation = useNavigation();
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   const [activeFilter, setActiveFilter] = useState('All');
 
   const filteredLists = MOCK_LISTS.filter(list => {
@@ -119,9 +109,11 @@ const ListScreen = () => {
         {/* Left Icon Area */}
         <View style={styles.cardIconWrap}>
           <Icon
-            name={isDraft ? 'file-document-edit-outline' : 'calendar-check-outline'}
+            name={
+              isDraft ? 'file-document-edit-outline' : 'calendar-check-outline'
+            }
             size={24}
-            color={DARK.primary}
+            color={colors.primary}
           />
         </View>
 
@@ -131,16 +123,14 @@ const ListScreen = () => {
             {item.name}
           </Text>
           <View style={styles.cardMetaRow}>
-            <Icon name="calendar-outline" size={12} color={DARK.textMuted} />
+            <Icon name="calendar-outline" size={12} color={colors.textMuted} />
             <Text style={styles.cardMetaText}>{item.date}</Text>
             <View style={styles.dot} />
             <Text style={styles.cardMetaText}>{item.itemCount} Items</Text>
             {isDraft && (
               <>
                 <View style={styles.dot} />
-                <Text style={[styles.cardMetaText, { color: DARK.orange, fontWeight: '600' }]}>
-                  Draft
-                </Text>
+                <Text style={styles.draftText}>Draft</Text>
               </>
             )}
           </View>
@@ -151,7 +141,7 @@ const ListScreen = () => {
 
         {/* Right Arrow */}
         <View style={styles.cardArrow}>
-          <Icon name="chevron-right" size={20} color={DARK.chipBorder} />
+          <Icon name="chevron-right" size={20} color={colors.textMuted} />
         </View>
       </TouchableOpacity>
     );
@@ -160,7 +150,7 @@ const ListScreen = () => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconWrap}>
-        <Icon name="basket-off-outline" size={48} color={DARK.primary} />
+        <Icon name="basket-off-outline" size={48} color={colors.primary} />
       </View>
       <Text style={styles.emptyTitle}>No Lists Found</Text>
       <Text style={styles.emptySub}>
@@ -173,12 +163,8 @@ const ListScreen = () => {
 
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
-
-      {/* ═════════════════════════════════ App Header ═════════════════════════════════ */}
-      <AppHeader
-        title="Saved Lists"
-        leftIcon="menu"
-      />
+      {/* ═════════════════════════════ App Header ═════════════════════════════ */}
+      <AppHeader title="Saved Lists" />
 
       {/* Filters */}
       <View style={styles.filtersContainer}>
@@ -205,137 +191,147 @@ const ListScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: DARK.bg,
-  },
-  filtersContainer: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: DARK.border,
-    backgroundColor: DARK.surface,
-  },
-  filtersScroll: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: DARK.bg,
-    borderWidth: 1,
-    borderColor: DARK.border,
-  },
-  chipActive: {
-    backgroundColor: DARK.primary,
-    borderColor: DARK.primary,
-  },
-  chipText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: DARK.textMuted,
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
-  },
-  listContent: {
-    padding: 16,
-    gap: 12,
-    paddingBottom: 100, // Extra padding for bottom tab bar
-  },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: DARK.surface,
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    shadowColor: DARK.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  cardIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: DARK.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  cardContent: {
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    marginBottom: 4,
-    letterSpacing: 0.2,
-  },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  cardMetaText: {
-    fontSize: 12,
-    color: DARK.textMuted,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: DARK.chipBorder,
-    marginHorizontal: 8,
-  },
-  cardPreview: {
-    fontSize: 13,
-    color: DARK.textMuted,
-  },
-  cardArrow: {
-    marginLeft: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: DARK.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
-  },
-  emptyIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: DARK.primaryMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: DARK.textPrimary,
-    marginBottom: 8,
-  },
-  emptySub: {
-    fontSize: 14,
-    color: DARK.textMuted,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-});
+// ─── Styles (theme se) ────────────────────────────────────────────────────
+const createStyles = (theme: Theme) => {
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
+    theme;
+
+  return StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.appBackground,
+    },
+    filtersContainer: {
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.appBackground,
+    },
+    filtersScroll: {
+      paddingHorizontal: spacing.lg,
+      gap: spacing.sm,
+    },
+    chip: {
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.cardBgVariant,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    chipActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    chipText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.textMuted,
+    },
+    chipTextActive: {
+      color: colors.onPrimary,
+    },
+    listContent: {
+      padding: spacing.lg,
+      gap: spacing.md,
+      paddingBottom: 100, // bottom tab bar ke liye extra jagah
+    },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBg,
+      borderRadius: borderRadius.lg,
+      padding: spacing.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
+    cardIconWrap: {
+      width: 48,
+      height: 48,
+      borderRadius: borderRadius.lg - 2,
+      backgroundColor: colors.primaryMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md + 2,
+    },
+    cardContent: {
+      flex: 1,
+    },
+    cardTitle: {
+      fontSize: typography.md,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+      marginBottom: spacing.xs,
+      letterSpacing: 0.2,
+    },
+    cardMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 6,
+    },
+    cardMetaText: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.medium,
+      color: colors.textMuted,
+      marginLeft: spacing.xs,
+    },
+    draftText: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.warning,
+      marginLeft: spacing.xs,
+    },
+    dot: {
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: colors.border,
+      marginHorizontal: spacing.sm,
+    },
+    cardPreview: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
+    cardArrow: {
+      marginLeft: spacing.md,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.cardBgVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyState: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 80,
+      paddingHorizontal: spacing.xxxl,
+    },
+    emptyIconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: colors.primaryMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: spacing.xl,
+    },
+    emptyTitle: {
+      fontSize: typography.lg,
+      fontFamily: fontFamilies.bold,
+      color: colors.textPrimary,
+      marginBottom: spacing.sm,
+    },
+    emptySub: {
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+  });
+};
 
 export default ListScreen;

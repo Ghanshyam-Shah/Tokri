@@ -1,7 +1,13 @@
-// {/* ══════════════════════════════════════════════════════════════════════════════ */ }
-// Toggle by default visible hota he
-// "leftIcon" ke sath "onleftPress" dena jaruri he nhi to leftIcon visible nhi hoga
-// {/* ══════════════════════════════════════════════════════════════════════════════ */ }
+// src/shared/components/headers/AppHeader.tsx
+//
+// Shared header: [left] [title (center)] [right action] [theme toggle]
+//
+// Notes:
+//  - Left button default 'menu' (drawer kholta hai). Detail screens pe leftAction="back".
+//  - Left icon tabhi dikhta hai jab icon aur press-handler dono resolve ho jayein
+//    (leftAction se default mil jata hai; custom leftIcon ke saath onLeftPress do).
+//  - Theme toggle default visible. Hatana ho to showThemeToggle={false}.
+//  - Colors/fonts/spacing sab useTheme() se.
 
 import React, { useRef } from 'react';
 import {
@@ -70,6 +76,9 @@ interface HeaderIconButtonProps {
   radius: number;
   badge?: number;
   badgeColor?: string;
+  badgeTextColor?: string;
+  badgeFontSize?: number;
+  badgeFontFamily?: string;
 }
 
 const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
@@ -81,6 +90,9 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
   radius,
   badge,
   badgeColor,
+  badgeTextColor,
+  badgeFontSize,
+  badgeFontFamily,
 }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -117,7 +129,15 @@ const HeaderIconButton: React.FC<HeaderIconButtonProps> = ({
         )}
         {badge !== undefined && badge > 0 && (
           <View style={[styles.badge, { backgroundColor: badgeColor }]}>
-            <Text style={styles.badgeTxt}>{badge > 99 ? '99+' : badge}</Text>
+            <Text
+              style={{
+                color: badgeTextColor,
+                fontSize: badgeFontSize,
+                fontFamily: badgeFontFamily,
+              }}
+            >
+              {badge > 99 ? '99+' : badge}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
@@ -141,7 +161,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   showThemeToggle = true,
 }) => {
   const { theme, isDark, toggleTheme } = useTheme();
-  const { colors, borderRadius, shadows, fontFamilies, typography } = theme;
+  const { colors, borderRadius, fontFamilies, typography } = theme;
   const navigation = useNavigation();
 
   // Left button resolve: override mila to wo, warna leftAction ke hisaab se default
@@ -172,13 +192,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       style={[
         styles.header,
         {
-          backgroundColor: colors.appBackground,
-
-          // ── Separator style: dono try karo, ek ko comment karke dusra chalao ──
-
-          // OPTION 2: hairline border
+          backgroundColor: colors.headerBackground,
+          // hairline separator
           borderBottomWidth: StyleSheet.hairlineWidth,
-          borderBottomColor: colors.border, // <- apni theme ka border key lagana
+          borderBottomColor: colors.border,
         },
       ]}
     >
@@ -222,7 +239,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             color={colors.headerContent}
             radius={borderRadius.sm}
             badge={rightBadge}
-            badgeColor={colors.primary} // <- apni theme me jo primary/accent key ho wo lagana
+            badgeColor={colors.primary}
+            badgeTextColor={colors.onPrimary}
+            badgeFontSize={typography.xs - 2}
+            badgeFontFamily={fontFamilies.bold}
           />
         )}
         {showThemeToggle && (
@@ -230,7 +250,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             icon={isDark ? 'white-balance-sunny' : 'weather-night'}
             onPress={toggleTheme}
             size={22}
-            color={isDark ? '#FCD34D' : '#818CF8'}
+            color={isDark ? colors.themeToggleSun : colors.themeToggleMoon}
             radius={borderRadius.sm}
           />
         )}
@@ -239,13 +259,14 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   );
 };
 
+// Sirf layout — colors/fonts upar theme se aate hain
 const styles = StyleSheet.create({
   header: {
     height: HEADER_HEIGHT,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: H_PADDING,
-    zIndex: 20, // collapsible bar (zIndex 10) ke upar rahe, taaki shadow dikhe
+    zIndex: 20, // collapsible bar (zIndex 10) ke upar rahe
   },
   sideSlot: {
     width: SIDE_SLOT_W,
@@ -271,11 +292,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 3,
   },
-  badgeTxt: { fontSize: 9, fontWeight: '800', color: '#fff' },
   title: {
     flex: 1,
     textAlign: 'center',
-    fontWeight: '700',
     letterSpacing: 0.3,
   },
 });

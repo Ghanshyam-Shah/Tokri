@@ -130,7 +130,7 @@ const NewListScreen: React.FC = () => {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   // primary ke upar ka text/icon (light me white, dark me dark)
-  const onPrimary = colors.appBackground;
+  const onPrimary = colors.onPrimary;
 
   const [listName, setListName] = useState('');
   const [listType, setListType] = useState<ListType>('monthly');
@@ -280,7 +280,7 @@ const NewListScreen: React.FC = () => {
                 styles.templateCard,
                 {
                   backgroundColor: useTemplate
-                    ? `${colors.primary}26`
+                    ? colors.primaryMuted
                     : colors.cardBgVariant,
                   borderColor: useTemplate ? colors.primary : colors.border,
                 },
@@ -351,7 +351,7 @@ const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
     theme;
 
-  const onPrimary = colors.appBackground;
+  const onPrimary = colors.onPrimary;
   const inputBg = colors.cardBgVariant;
 
   return StyleSheet.create({

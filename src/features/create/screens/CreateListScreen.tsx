@@ -51,15 +51,6 @@ const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
 const IMAGE_H = CARD_W * 0.82;
 const BOTTOM_BAR_H = 78;
 
-// ═══════════════════════════════════════════════════════════════════
-// Ye teeno photo / modal ke upar ke scrims hain — light/dark dono me dark hi
-// chahiye, isliye theme se nahi aate.
-// ═══════════════════════════════════════════════════════════════════
-const SCRIM = 'rgba(0,0,0,0.5)'; // modal backdrop
-const PHOTO_SCRIM = 'rgba(0,0,0,0.32)'; // selected card ke photo pe overlay
-const PHOTO_BADGE_BG = 'rgba(0,0,0,0.55)'; // photo pe note badge
-const PHOTO_ICON = '#FFFFFF'; // us badge ka icon
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Category {
   id: string;
@@ -200,8 +191,8 @@ const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
     theme;
 
-  const onPrimary = colors.appBackground; // primary ke upar ka text/icon
-  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
+  const onPrimary = colors.onPrimary; // primary ke upar ka text/icon
+  const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
 
   return {
     // ── Category chips ──
@@ -256,7 +247,7 @@ const createStyles = (theme: Theme) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: SCRIM,
+        backgroundColor: colors.overlay,
       },
       sheet: {
         backgroundColor: colors.cardBg,
@@ -432,7 +423,7 @@ const createStyles = (theme: Theme) => {
         width: 22,
         height: 22,
         borderRadius: 7,
-        backgroundColor: PHOTO_BADGE_BG,
+        backgroundColor: colors.photoBadgeBg,
         alignItems: 'center',
         justifyContent: 'center',
       },
@@ -457,7 +448,7 @@ const createStyles = (theme: Theme) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: PHOTO_SCRIM,
+        backgroundColor: colors.photoScrim,
         alignItems: 'center',
         justifyContent: 'center',
       },
@@ -542,7 +533,7 @@ const createStyles = (theme: Theme) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: SCRIM,
+        backgroundColor: colors.overlay,
       },
       sheet: {
         backgroundColor: colors.cardBg,
@@ -742,7 +733,7 @@ const CategoryChips = React.memo(
               <Text
                 style={[
                   ch.text,
-                  { color: active ? colors.appBackground : colors.textMuted },
+                  { color: active ? colors.onPrimary : colors.textMuted },
                 ]}
                 numberOfLines={1}
               >
@@ -785,7 +776,7 @@ const QuantityStepper = React.memo(
           style={[qs.btn, qs.btnFilled]}
           activeOpacity={0.75}
         >
-          <Icon name="plus" size={13} color={colors.appBackground} />
+          <Icon name="plus" size={13} color={colors.onPrimary} />
         </TouchableOpacity>
       </View>
     );
@@ -879,7 +870,7 @@ const EditNoteModal = React.memo(
                 onPress={() => setQty(q => q + 1)}
                 style={[em.qBtn, em.qBtnPlus]}
               >
-                <Icon name="plus" size={16} color={colors.appBackground} />
+                <Icon name="plus" size={16} color={colors.onPrimary} />
               </TouchableOpacity>
               <Text style={em.unitTag}>{product.unit} each</Text>
             </View>
@@ -922,7 +913,7 @@ const EditNoteModal = React.memo(
                 <Icon
                   name="check-circle-outline"
                   size={18}
-                  color={colors.appBackground}
+                  color={colors.onPrimary}
                   style={em.btnIcon}
                 />
                 <Text style={em.saveTxt}>Done / हो गया</Text>
@@ -973,7 +964,7 @@ const ProductCard = React.memo(
 
           {hasNote && (
             <View style={pc.noteBadge}>
-              <Icon name="note-text-outline" size={12} color={PHOTO_ICON} />
+              <Icon name="note-text-outline" size={12} color={colors.onDark} />
             </View>
           )}
 
@@ -1033,7 +1024,7 @@ const ProductCard = React.memo(
                   activeOpacity={0.85}
                   style={pc.addBtn}
                 >
-                  <Icon name="plus" size={18} color={colors.appBackground} />
+                  <Icon name="plus" size={18} color={colors.onPrimary} />
                 </TouchableOpacity>
               </>
             )}
@@ -1187,7 +1178,7 @@ const ActionBar = React.memo(
           <Icon
             name="arrow-right"
             size={18}
-            color={colors.appBackground}
+            color={colors.onPrimary}
             style={{ marginLeft: 6 }}
           />
         </TouchableOpacity>

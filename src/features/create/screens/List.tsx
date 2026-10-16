@@ -39,7 +39,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-
+import { lightColors } from '../../../theme/colors';
 // Optional native modules — install na hon to ye 2 lines comment kar do,
 // screen Save-as-Image / Save-as-PDF ke bina chalegi.
 import ViewShot from 'react-native-view-shot';
@@ -52,12 +52,6 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 // ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
 const BOTTOM_BAR_H = 92;
-
-// Theme se bahar (jaan-boojhkar):
-const SCRIM = 'rgba(0,0,0,0.5)'; // modal backdrop
-const PHOTO_BADGE_ICON = '#FFFFFF'; // note badge ka icon (badge primary pe hai)
-const WHATSAPP_GREEN = '#25D366'; // WhatsApp brand color
-const WHATSAPP_ICON = '#FFFFFF';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SelectedP {
@@ -180,8 +174,8 @@ const DEFAULT_ITEMS: SelectedP[] = [
 const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
 
-  const onPrimary = colors.appBackground; // primary ke upar ka text/icon
-  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
+  const onPrimary = colors.onPrimary; // primary ke upar ka text/icon
+  const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
 
   return {
     // ── Category chips ──
@@ -303,7 +297,7 @@ const createStyles = (theme: Theme) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: SCRIM,
+        backgroundColor: colors.overlay,
       },
       sheet: {
         backgroundColor: colors.cardBg,
@@ -465,7 +459,7 @@ const createStyles = (theme: Theme) => {
         alignItems: 'center',
         justifyContent: 'center',
       },
-      iconWrapWhatsapp: { backgroundColor: WHATSAPP_GREEN },
+      iconWrapWhatsapp: { backgroundColor: colors.whatsapp },
       label: {
         fontSize: typography.xs,
         fontFamily: fontFamilies.semiBold,
@@ -575,7 +569,7 @@ const CategoryChips = React.memo(
               <Text
                 style={[
                   ch.text,
-                  { color: active ? colors.appBackground : colors.textMuted },
+                  { color: active ? colors.onPrimary : colors.textMuted },
                 ]}
                 numberOfLines={1}
               >
@@ -607,7 +601,7 @@ const ListRow = React.memo(
                 <Icon
                   name="note-text-outline"
                   size={11}
-                  color={colors.appBackground}
+                  color={colors.onPrimary}
                 />
               </View>
             )}
@@ -733,7 +727,7 @@ const EditItemModal = React.memo(
                 onPress={() => setQty(q => q + 1)}
                 style={[em.qBtn, em.qBtnPlus]}
               >
-                <Icon name="plus" size={16} color={colors.appBackground} />
+                <Icon name="plus" size={16} color={colors.onPrimary} />
               </TouchableOpacity>
               <Text style={em.unitTag}>{item.unit} each</Text>
             </View>
@@ -770,7 +764,7 @@ const EditItemModal = React.memo(
                 <Icon
                   name="check-circle-outline"
                   size={18}
-                  color={colors.appBackground}
+                  color={colors.onPrimary}
                   style={em.btnIcon}
                 />
                 <Text style={em.saveTxt}>Done / हो गया</Text>
@@ -851,7 +845,7 @@ const ExportBar = React.memo(
           activeOpacity={0.8}
         >
           <View style={[xb.iconWrap, xb.iconWrapWhatsapp]}>
-            <Icon name="whatsapp" size={20} color={WHATSAPP_ICON} />
+            <Icon name="whatsapp" size={20} color={colors.onDark} />
           </View>
           <Text style={xb.label}>WhatsApp</Text>
         </TouchableOpacity>
@@ -991,39 +985,36 @@ const List: React.FC = () => {
     if (itemCount === 0) return;
     try {
       // PDF ek document hai (UI nahi), isliye uske colors theme se nahi aate
-      const rowsHtml = itemList
-        .map(
-          (it, idx) => `
-        <tr>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${idx + 1}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.name} (${
-            it.nameHindi
-          })</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${it.unit}</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${
-            it.quantity
-          }</td>
-          <td style="padding:8px;border-bottom:1px solid #eee;">${
-            it.note ?? ''
-          }</td>
-        </tr>`,
-        )
-        .join('');
+      const pdfCell = `padding:8px;border-bottom:1px solid ${lightColors.border};`;
+const pdfHead = `padding:8px;text-align:left;`;
 
-      const html = `
-        <html><body style="font-family:sans-serif;padding:16px;">
-          <h2>${listName}</h2>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr style="background:#f3f3f3;">
-              <th style="padding:8px;text-align:left;">#</th>
-              <th style="padding:8px;text-align:left;">Item</th>
-              <th style="padding:8px;text-align:left;">Unit</th>
-              <th style="padding:8px;text-align:left;">Qty</th>
-              <th style="padding:8px;text-align:left;">Note</th>
-            </tr>
-            ${rowsHtml}
-          </table>
-        </body></html>`;
+const rowsHtml = itemList
+  .map(
+    (it, idx) => `
+  <tr>
+    <td style="${pdfCell}">${idx + 1}</td>
+    <td style="${pdfCell}">${it.name} (${it.nameHindi})</td>
+    <td style="${pdfCell}">${it.unit}</td>
+    <td style="${pdfCell}">${it.quantity}</td>
+    <td style="${pdfCell}">${it.note ?? ''}</td>
+  </tr>`,
+  )
+  .join('');
+
+const html = `
+  <html><body style="font-family:sans-serif;padding:16px;color:${lightColors.textPrimary};">
+    <h2>${listName}</h2>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr style="background:${lightColors.cardBgVariant};">
+        <th style="${pdfHead}">#</th>
+        <th style="${pdfHead}">Item</th>
+        <th style="${pdfHead}">Unit</th>
+        <th style="${pdfHead}">Qty</th>
+        <th style="${pdfHead}">Note</th>
+      </tr>
+      ${rowsHtml}
+    </table>
+  </body></html>`;
 
       const pdf = await generatePDF({
         html,

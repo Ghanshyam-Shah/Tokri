@@ -218,7 +218,7 @@ const EditItem: React.FC = () => {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   // primary ke upar jo text/icon aata hai (light me white, dark me dark)
-  const onPrimary = colors.appBackground;
+  const onPrimary = colors.onPrimary;
 
   const existingProduct = useMemo(
     () => PRODUCTS.find(p => p.id === productId) ?? PRODUCTS[0],
@@ -731,7 +731,7 @@ const EditItem: React.FC = () => {
                 styles.topPickCard,
                 {
                   backgroundColor: isTopPick
-                    ? `${colors.primary}26`
+                    ? colors.primaryMuted
                     : colors.cardBgVariant,
                   borderColor: isTopPick ? colors.primary : colors.border,
                 },
@@ -803,9 +803,9 @@ const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
     theme;
 
-  const onPrimary = colors.appBackground;
+  const onPrimary = colors.onPrimary;
   const inputBg = colors.cardBgVariant;
-  const primaryMuted = `${colors.primary}26`; // primary 6-digit hex hona chahiye
+  const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.appBackground },
