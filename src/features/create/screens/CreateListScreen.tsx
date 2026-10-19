@@ -33,6 +33,13 @@ import { useTheme } from '../../../app/providers/ThemeProvider';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
+import {CATEGORIES} from '../../../Data/DummyData'
+import {Category} from '../../../Data/types'
+
+import ProductCard, {
+  CARD_GAP,
+  GRID_H_PADDING,
+} from '../../../shared/components/product/ProductCard';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -44,18 +51,14 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
-const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_GAP = 12;
-const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
-const IMAGE_H = CARD_W * 0.82;
 const BOTTOM_BAR_H = 78;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Category {
-  id: string;
-  label: string;
-  labelHindi: string;
-}
+// interface Category {
+//   id: string;
+//   label: string;
+//   labelHindi: string;
+// }
 interface Product {
   id: string;
   name: string;
@@ -71,14 +74,14 @@ interface SelectedP extends Product {
 }
 
 // ─── Static data ──────────────────────────────────────────────────────────────
-const CATEGORIES: Category[] = [
-  { id: 'all', label: 'All', labelHindi: 'सभी' },
-  { id: 'vegetables', label: 'Vegetables', labelHindi: 'सब्जियां' },
-  { id: 'dairy', label: 'Dairy', labelHindi: 'डेयरी' },
-  { id: 'grains', label: 'Grains', labelHindi: 'अनाज' },
-  { id: 'spices', label: 'Spices', labelHindi: 'मसाले' },
-  { id: 'snacks', label: 'Snacks', labelHindi: 'स्नैक्स' },
-];
+// const CATEGORIES: Category[] = [
+//   { id: 'all', label: 'All', labelHindi: 'सभी' },
+//   { id: 'vegetables', label: 'Vegetables', labelHindi: 'सब्जियां' },
+//   { id: 'dairy', label: 'Dairy', labelHindi: 'डेयरी' },
+//   { id: 'grains', label: 'Grains', labelHindi: 'अनाज' },
+//   { id: 'spices', label: 'Spices', labelHindi: 'मसाले' },
+//   { id: 'snacks', label: 'Snacks', labelHindi: 'स्नैक्स' },
+// ];
 
 const PRODUCTS: Product[] = [
   {
@@ -377,113 +380,42 @@ const createStyles = (theme: Theme) => {
     // ── Product card ──
     // borderWidth hamesha 1.5; select hone par sirf color badalta hai, taaki
     // grid reflow na ho.
-    pc: StyleSheet.create({
-      card: {
-        width: CARD_W,
-        backgroundColor: colors.cardBg,
-        borderRadius: borderRadius.lg,
-        overflow: 'hidden',
-        borderWidth: 1.5,
-        borderColor: 'transparent',
-        ...shadows.sm,
-      },
-      cardSelected: { borderColor: colors.primary },
-      imgWrap: {
-        width: '100%',
-        height: IMAGE_H,
-        backgroundColor: colors.cardBgVariant,
-        overflow: 'hidden',
-      },
-      img: { width: '100%', height: '100%' },
-      noteBadge: {
-        position: 'absolute',
-        top: 6,
-        left: 6,
-        width: 22,
-        height: 22,
-        borderRadius: 7,
-        backgroundColor: colors.photoBadgeBg,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      topPick: {
-        position: 'absolute',
-        top: 0,
-        right: 0,
-        backgroundColor: colors.primary,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 5,
-        borderBottomLeftRadius: borderRadius.md - 2,
-      },
-      topPickTxt: {
-        fontSize: typography.xs - 2,
-        fontFamily: fontFamilies.bold,
-        color: onPrimary,
-        letterSpacing: 0.8,
-      },
-      overlay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: colors.photoScrim,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      body: {
-        paddingHorizontal: spacing.sm + 2,
-        paddingTop: 9,
-        paddingBottom: spacing.sm + 2,
-        gap: 3,
-      },
-      name: {
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-        letterSpacing: 0.1,
-      },
-      hindi: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.hindi ?? fontFamilies.regular,
-        color: colors.textMuted,
-        marginBottom: 6,
-      },
-      bottomRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-      },
-      unitPill: {
-        backgroundColor: colors.cardBgVariant,
-        paddingHorizontal: spacing.sm,
-        paddingVertical: spacing.xs,
-        borderRadius: 6,
-      },
-      unitTxt: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.semiBold,
-        color: colors.textMuted,
-      },
-      addBtn: {
-        width: 30,
-        height: 30,
-        borderRadius: borderRadius.md - 2,
-        backgroundColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      editBtn: {
-        width: 30,
-        height: 30,
-        borderRadius: borderRadius.sm,
-        borderWidth: 1.5,
-        borderColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-    }),
-
+   // ── Product card footer (shared ProductCard ke andar jaata hai) ──
+pc: StyleSheet.create({
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unitPill: {
+    backgroundColor: colors.cardBgVariant,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 6,
+  },
+  unitTxt: {
+    fontSize: typography.xs,
+    fontFamily: fontFamilies.semiBold,
+    color: colors.textMuted,
+  },
+  addBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: borderRadius.md - 2,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+}),
     // ── List preview modal ──
     pm: StyleSheet.create({
       overlay: { flex: 1, justifyContent: 'flex-end' },
@@ -810,7 +742,8 @@ const EditNoteModal = React.memo(
 );
 
 // ─── Product Card ─────────────────────────────────────────────────
-const ProductCard = React.memo(
+// ─── Product Card (shared ProductCard + select/stepper footer) ────
+const SelectableProductCard = React.memo(
   ({
     product,
     selected,
@@ -836,84 +769,49 @@ const ProductCard = React.memo(
     const { colors } = theme;
 
     return (
-      <View style={[pc.card, selected && pc.cardSelected]}>
-        {/* Image */}
-        <View style={pc.imgWrap}>
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={pc.img}
-            resizeMode="cover"
-          />
-
-          {hasNote && (
-            <View style={pc.noteBadge}>
-              <Icon name="note-text-outline" size={12} color={colors.onDark} />
-            </View>
-          )}
-
-          {product.isTopPick && (
-            <View style={pc.topPick}>
-              <Text style={pc.topPickTxt}>TOP PICK</Text>
-            </View>
-          )}
-          {selected && (
-            // tick dabane par item seedha remove
-            <TouchableOpacity
-              style={pc.overlay}
-              activeOpacity={0.8}
-              onPress={() => onRemove(product.id)}
-            >
-              <Icon name="check-circle" size={30} color={colors.primary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Body */}
-        <View style={pc.body}>
-          <Text style={pc.name} numberOfLines={1}>
-            {product.name}
-          </Text>
-          <Text style={pc.hindi} numberOfLines={1}>
-            {product.nameHindi} • {product.unit}
-          </Text>
-
-          <View style={pc.bottomRow}>
-            {selected ? (
-              <>
-                <QuantityStepper
-                  quantity={quantity}
-                  onIncrease={() => onIncrease(product.id)}
-                  onDecrease={() => onDecrease(product.id)}
+      <ProductCard
+        product={product}
+        subtitle={`${product.nameHindi} • ${product.unit}`}
+        selected={selected}
+        hasNote={hasNote}
+        onDeselect={() => onRemove(product.id)}
+      >
+        <View style={pc.bottomRow}>
+          {selected ? (
+            <>
+              <QuantityStepper
+                quantity={quantity}
+                onIncrease={() => onIncrease(product.id)}
+                onDecrease={() => onDecrease(product.id)}
+              />
+              <TouchableOpacity
+                onPress={() => onEdit(product.id)}
+                activeOpacity={0.8}
+                style={pc.editBtn}
+              >
+                <Icon
+                  name="pencil-outline"
+                  size={16}
+                  color={colors.primary}
                 />
-                <TouchableOpacity
-                  onPress={() => onEdit(product.id)}
-                  activeOpacity={0.8}
-                  style={pc.editBtn}
-                >
-                  <Icon
-                    name="pencil-outline"
-                    size={16}
-                    color={colors.primary}
-                  />
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <View style={pc.unitPill}>
-                  <Text style={pc.unitTxt}>{product.unit}</Text>
-                </View>
-                <TouchableOpacity
-                  onPress={() => onAdd(product.id)}
-                  activeOpacity={0.85}
-                  style={pc.addBtn}
-                >
-                  <Icon name="plus" size={18} color={colors.onPrimary} />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View style={pc.unitPill}>
+                <Text style={pc.unitTxt}>{product.unit}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => onAdd(product.id)}
+                activeOpacity={0.85}
+                style={pc.addBtn}
+              >
+                <Icon name="plus" size={18} color={colors.onPrimary} />
+              </TouchableOpacity>
+            </>
+          )}
         </View>
-      </View>
+      </ProductCard>
     );
   },
 );
@@ -1238,7 +1136,7 @@ const CreateListScreen: React.FC = () => {
   // ── Render item ──
   const renderItem = useCallback(
     ({ item }: { item: Product }) => (
-      <ProductCard
+      <SelectableProductCard
         product={item}
         selected={!!selectedProducts[item.id]}
         quantity={selectedProducts[item.id]?.quantity ?? 0}

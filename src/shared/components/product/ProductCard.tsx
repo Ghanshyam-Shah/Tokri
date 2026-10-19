@@ -35,7 +35,7 @@ const IMAGE_H = CARD_W * 0.82;
 export interface ProductCardData {
   name: string;
   nameHindi: string;
-  imageUrl: string;
+  imageUrl?: string;
   isTopPick?: boolean;
 }
 
@@ -66,11 +66,17 @@ const ProductCard: React.FC<ProductCardProps> = ({
     <View style={[styles.card, selected && styles.cardSelected]}>
       {/* Image */}
       <View style={styles.imgWrap}>
-        <Image
-          source={{ uri: product.imageUrl }}
-          style={styles.img}
-          resizeMode="cover"
-        />
+        {product.imageUrl ? (
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={styles.img}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.imgPlaceholder}>
+            <Icon name="image-off-outline" size={32} color={colors.textMuted} />
+          </View>
+        )}
 
         {hasNote && (
           <View style={styles.noteBadge}>
@@ -142,7 +148,13 @@ const createStyles = (theme: AppTheme) => {
       backgroundColor: colors.cardBgVariant,
       overflow: 'hidden',
     },
+
     img: { width: '100%', height: '100%' },
+    imgPlaceholder: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     noteBadge: {
       position: 'absolute',
       top: 6,
