@@ -4,7 +4,7 @@ export interface ColorPalette {
   warning: string;
   info: string;
   textMuted: string;
-  border: string;   // <- new
+  border: string;
   appBackground: string;
   headerBackground: string;
   headerContent: string;
@@ -18,6 +18,17 @@ export interface ColorPalette {
   primary: string;
   textPrimary: string;
   textSecondary: string;
+
+  // additional tokens
+  onPrimary: string;        // primary ke upar ka text/icon
+  primaryMuted: string;     // primary ka halka tint (chips, pills, selected bg)
+  overlay: string;          // modal backdrop
+  photoScrim: string;       // photo ke upar dark overlay
+  photoBadgeBg: string;     // photo ke upar chhota badge
+  onDark: string;           // dark scrim / brand surface ke upar white icon
+  whatsapp: string;         // WhatsApp brand green
+  themeToggleSun: string;   // header toggle: sun
+  themeToggleMoon: string;  // header toggle: moon
 }
 
 export interface TypographyScale {
