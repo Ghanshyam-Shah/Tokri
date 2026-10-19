@@ -24,8 +24,7 @@ export const PRODUCTS: Product[] = [
     price: 40,
     unit: '1kg',
     categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1546094096-0df4bcabd777?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1546094096-0df4bcabd777?w=400&q=80',
     isTopPick: true,
     createdAt: Date.now(),
   },
@@ -36,8 +35,7 @@ export const PRODUCTS: Product[] = [
     price: 68,
     unit: '1L',
     categoryId: 'dairy',
-    imageUrl:
-      'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80',
     isTopPick: false,
     createdAt: Date.now(),
   },
@@ -48,8 +46,7 @@ export const PRODUCTS: Product[] = [
     price: 450,
     unit: '5kg',
     categoryId: 'grains',
-    imageUrl:
-      'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80',
     isTopPick: true,
     createdAt: Date.now(),
   },
@@ -60,8 +57,7 @@ export const PRODUCTS: Product[] = [
     price: 120,
     unit: '1kg',
     categoryId: 'grains',
-    imageUrl:
-      'https://images.unsplash.com/photo-1599909631565-9921aaabb4a7?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1599909631565-9921aaabb4a7?w=400&q=80',
     isTopPick: false,
     createdAt: Date.now(),
   },
@@ -72,8 +68,7 @@ export const PRODUCTS: Product[] = [
     price: 45,
     unit: '250g',
     categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80',
     isTopPick: true,
     createdAt: Date.now(),
   },
@@ -84,8 +79,7 @@ export const PRODUCTS: Product[] = [
     price: 95,
     unit: '500g',
     categoryId: 'snacks',
-    imageUrl:
-      'https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=400&q=80',
     isTopPick: false,
     createdAt: Date.now(),
   },
@@ -96,8 +90,7 @@ export const PRODUCTS: Product[] = [
     price: 85,
     unit: '200g',
     categoryId: 'dairy',
-    imageUrl:
-      'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
     isTopPick: true,
     createdAt: Date.now(),
   },
@@ -108,8 +101,7 @@ export const PRODUCTS: Product[] = [
     price: 35,
     unit: '500g',
     categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80',
     isTopPick: false,
     createdAt: Date.now(),
   },
