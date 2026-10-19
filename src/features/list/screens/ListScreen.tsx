@@ -1,26 +1,15 @@
 
-import React, { useMemo, useState, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Animated,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-} from 'react-native';
+import React, { useMemo, useState, } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
+import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
+import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
+import EmptyState from '../../../shared/components/states/EmptyState';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
-
-const H_PADDING = 16;
 
 type ListStatus = 'Draft' | 'Completed';
 type ListCategory = 'Monthly' | 'Weekly' | 'Festival' | 'Custom';
@@ -120,92 +109,6 @@ const FILTERS = [
 
 // ─── Category Chips: Catalog jaisi styling ──────────────────────────────
 
-const FilterChips = React.memo(
-  ({
-    selected,
-    onSelect,
-  }: {
-    selected: string;
-    onSelect: (id: string) => void;
-  }) => {
-    const { theme } = useTheme();
-    const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
-
-    const styles = useMemo(
-      () =>
-        StyleSheet.create({
-          scrollStyle: {
-            flexGrow: 0,
-            flexShrink: 0,
-          },
-          row: {
-            flexDirection: 'row',
-            gap: spacing.sm,
-            paddingHorizontal: H_PADDING,
-            paddingVertical: spacing.xs,
-          },
-          chip: {
-            flexShrink: 0,
-            paddingHorizontal: spacing.md + 2,
-            paddingVertical: spacing.sm,
-            borderRadius: borderRadius.full,
-            borderWidth: 1,
-          },
-          active: {
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
-          },
-          inactive: {
-            borderColor: colors.border,
-          },
-          text: {
-            fontSize: typography.xs + 1,
-            fontFamily: fontFamilies.medium,
-          },
-        }),
-      [colors, spacing, borderRadius, typography, fontFamilies],
-    );
-
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        style={styles.scrollStyle}
-      >
-        {FILTERS.map(filter => {
-          const active = selected === filter.id;
-
-          return (
-            <TouchableOpacity
-              key={filter.id}
-              onPress={() => onSelect(filter.id)}
-              activeOpacity={0.8}
-              style={[
-                styles.chip,
-                active ? styles.active : styles.inactive,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.text,
-                  {
-                    color: active
-                      ? colors.onPrimary
-                      : colors.textMuted,
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {filter.label} / {filter.labelHindi}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  },
-);
 
 // ─── Main Component ─────────────────────────────────────────────────────
 
@@ -216,11 +119,7 @@ const ListScreen = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [barHeight, setBarHeight] = useState(116);
 
-  const barTranslateY = useRef(new Animated.Value(0)).current;
-  const barHidden = useRef(false);
-  const lastOffset = useRef(0);
 
   // Search + category filtering
   const filteredLists = useMemo(() => {
@@ -245,50 +144,19 @@ const ListScreen = () => {
   }, [searchQuery, activeFilter]);
 
   // Catalog jaisa collapsible search + chips bar
-  const showBar = useCallback(() => {
-    if (!barHidden.current) return;
-
-    barHidden.current = false;
-
-    Animated.timing(barTranslateY, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY]);
-
-  const hideBar = useCallback(() => {
-    if (barHidden.current) return;
-
-    barHidden.current = true;
-
-    Animated.timing(barTranslateY, {
-      toValue: -barHeight,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY, barHeight]);
-
-  const handleScroll = useCallback(
-    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = event.nativeEvent.contentOffset.y;
-      const diff = y - lastOffset.current;
-
-      if (y <= 4) {
-        showBar();
-      } else if (diff > 2 && y > barHeight) {
-        hideBar();
-      } else if (diff < -2) {
-        showBar();
-      }
-
-      lastOffset.current = y;
-    },
-    [barHeight, showBar, hideBar],
-  );
+  const { barHeight, barTranslateY, onBarLayout, handleScroll } =
+    useCollapsibleBar();
+    
+  const emptySubtitle = searchQuery.trim()
+    ? `No lists found for '${searchQuery.trim()}'.`
+    : activeFilter === 'all'
+      ? "You haven't created any shopping lists yet."
+      : `No lists found for '${activeFilter}'.`;
 
   const renderListCard = ({ item }: { item: SavedList }) => {
     const isDraft = item.status === 'Draft';
+
+
 
     return (
       <TouchableOpacity activeOpacity={0.85} style={styles.card}>
@@ -347,80 +215,22 @@ const ListScreen = () => {
     );
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyState}>
-      <View style={styles.emptyIconWrap}>
-        <Icon
-          name="basket-off-outline"
-          size={48}
-          color={colors.primary}
-        />
-      </View>
-
-      <Text style={styles.emptyTitle}>No Lists Found</Text>
-
-      <Text style={styles.emptySub}>
-        {searchQuery.trim()
-          ? `No lists found for '${searchQuery.trim()}'.`
-          : activeFilter === 'all'
-            ? "You haven't created any shopping lists yet."
-            : `No lists found for '${activeFilter}'.`}
-      </Text>
-    </View>
-  );
-
   return (
     <SafeAreaView style={styles.root} edges={['top']}>
       <AppHeader title="Saved Lists" />
 
       <View style={styles.body}>
         {/* Search bar + category chips */}
-        <Animated.View
-          onLayout={event =>
-            setBarHeight(event.nativeEvent.layout.height)
-          }
-          style={[
-            styles.collapsibleBar,
-            { transform: [{ translateY: barTranslateY }] },
-          ]}
-        >
-          <View style={styles.searchWrap}>
-            <Icon
-              name="magnify"
-              size={20}
-              color={colors.textMuted}
-              style={styles.searchIcon}
-            />
-
-            <TextInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search lists / सूची खोजें..."
-              placeholderTextColor={colors.textMuted}
-              style={styles.searchInput}
-              returnKeyType="search"
-              autoCorrect={false}
-            />
-
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery('')}
-                activeOpacity={0.75}
-              >
-                <Icon
-                  name="close-circle"
-                  size={18}
-                  color={colors.textMuted}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <FilterChips
-            selected={activeFilter}
-            onSelect={setActiveFilter}
-          />
-        </Animated.View>
+        <CollapsibleFilterBar
+          translateY={barTranslateY}
+          onLayout={onBarLayout}
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Search lists / सूची खोजें..."
+          chips={FILTERS}
+          selectedChipId={activeFilter}
+          onSelectChip={setActiveFilter}
+        />
 
         {/* Saved lists */}
         <FlatList
@@ -435,7 +245,13 @@ const ListScreen = () => {
             },
           ]}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyState}
+          ListEmptyComponent={
+            <EmptyState
+              icon="basket-off-outline"
+              title="No Lists Found"
+              subtitle={emptySubtitle}
+            />
+          }
           onScroll={handleScroll}
           scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
@@ -468,41 +284,7 @@ const createStyles = (theme: Theme) => {
     },
 
     // Same collapsible bar styling as CatalogScreen
-    collapsibleBar: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 10,
-      backgroundColor: colors.appBackground,
-      paddingBottom: spacing.sm,
-    },
 
-    searchWrap: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginHorizontal: H_PADDING,
-      marginTop: spacing.md,
-      marginBottom: spacing.sm,
-      backgroundColor: colors.cardBgVariant,
-      borderRadius: borderRadius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: spacing.md,
-      height: 44,
-    },
-
-    searchIcon: {
-      marginRight: spacing.sm,
-    },
-
-    searchInput: {
-      flex: 1,
-      fontSize: typography.sm,
-      fontFamily: fontFamilies.regular,
-      color: colors.textPrimary,
-      paddingVertical: 0,
-    },
 
     listContent: {
       paddingHorizontal: spacing.lg,
@@ -584,38 +366,6 @@ const createStyles = (theme: Theme) => {
       backgroundColor: colors.cardBgVariant,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-
-    emptyState: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 80,
-      paddingHorizontal: spacing.xxxl,
-    },
-
-    emptyIconWrap: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: colors.primaryMuted,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: spacing.xl,
-    },
-
-    emptyTitle: {
-      fontSize: typography.lg,
-      fontFamily: fontFamilies.bold,
-      color: colors.textPrimary,
-      marginBottom: spacing.sm,
-    },
-
-    emptySub: {
-      fontSize: typography.sm,
-      fontFamily: fontFamilies.regular,
-      color: colors.textMuted,
-      textAlign: 'center',
-      lineHeight: 20,
     },
   });
 };

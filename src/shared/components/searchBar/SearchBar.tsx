@@ -1,172 +1,104 @@
-// // src/features/catalog/components/SearchBar.tsx
+// src/shared/components/searchBar/SearchBar.tsx
+//
+// Reusable themed search input.
+// - Controlled: value + onChangeText parent se.
+// - Clear (x) button apne aap aata hai jab text ho.
+// - Default: returnKeyType="search", autoCorrect={false}
+//   (Hindi/Hinglish naam likhte waqt keyboard auto-correct nahi karega).
+//   Kisi screen ko alag chahiye to wohi prop pass karke override kar sakti hai.
+// - Outer spacing (margin) yahan nahi hai; screen containerStyle se deti hai.
 
-// import React from 'react';
-// import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-
-// import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-// const DARK = {
-//   border: '#3a2418',
-//   textPrimary: '#f6ded3',
-//   textMuted: '#a78b7d',
-//   searchBg: '#1e1208',
-// };
-
-// interface SearchBarProps {
-//   searchQuery: string;
-//   onSearchChange: (q: string) => void;
-// }
-
-// const SearchBar: React.FC<SearchBarProps> = ({
-//   searchQuery,
-//   onSearchChange,
-// }) => {
-//   return (
-//     <View style={styles.searchOuter}>
-//       <View style={styles.searchBar}>
-//         <Icon
-//           name="magnify"
-//           size={20}
-//           color={DARK.textMuted}
-//           style={{ marginRight: 8 }}
-//         />
-
-//         <TextInput
-//           placeholder="Search catalog / सूची खोजें..."
-//           placeholderTextColor={DARK.textMuted}
-//           value={searchQuery}
-//           onChangeText={onSearchChange}
-//           style={styles.searchInput}
-//         />
-
-//         {searchQuery.length > 0 && (
-//           <TouchableOpacity
-//             onPress={() => onSearchChange('')}
-//             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-//           >
-//             <Icon name="close-circle" size={18} color={DARK.textMuted} />
-//           </TouchableOpacity>
-//         )}
-//       </View>
-//     </View>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   searchOuter: {
-//     paddingTop: 12,
-//     paddingBottom: 14,
-//   },
-
-//   searchBar: {
-//     flexDirection: 'row',
-//     alignItems: 'center',
-//     backgroundColor: DARK.searchBg,
-//     borderRadius: 14,
-//     paddingHorizontal: 14,
-//     height: 48,
-//     borderWidth: 1,
-//     borderColor: DARK.border,
-//   },
-
-//   searchInput: {
-//     flex: 1,
-//     color: DARK.textPrimary,
-//     fontSize: 14,
-//   },
-// });
-
-// export default React.memo(SearchBar);
-
-// src/features/catalog/components/SearchBar.tsx
-
-import React from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-
+import React, { useMemo } from 'react';
+import {
+  View,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StyleProp,
+  ViewStyle,
+  TextInputProps,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const DARK = {
-  border: '#3a2418',
-  textPrimary: '#f6ded3',
-  textMuted: '#a78b7d',
-  searchBg: '#1e1208',
-};
+import { useTheme } from '../../../app/providers/ThemeProvider';
+import { AppTheme } from '../../../theme/types/theme.types';
 
-interface SearchBarProps {
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
+export interface SearchBarProps
+  extends Omit<TextInputProps, 'style' | 'value' | 'onChangeText'> {
+  value: string;
+  onChangeText: (text: string) => void;
+  placeholder?: string;
+  /** Bahar ki spacing / width wagairah (margin etc.) */
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
-  searchQuery,
-  onSearchChange,
+  value,
+  onChangeText,
+  placeholder = 'Search / खोजें...',
+  containerStyle,
+  ...inputProps
 }) => {
+  const { theme } = useTheme();
+  const { colors } = theme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.searchBar}>
-        <Icon
-          name="magnify"
-          size={20}
-          color={DARK.textMuted}
-          style={styles.searchIcon}
-        />
+    <View style={[styles.wrap, containerStyle]}>
+      <Icon
+        name="magnify"
+        size={20}
+        color={colors.textMuted}
+        style={styles.icon}
+      />
 
-        <TextInput
-          value={searchQuery}
-          onChangeText={onSearchChange}
-          placeholder="Search catalog / सूची खोजें..."
-          placeholderTextColor={DARK.textMuted}
-          style={styles.searchInput}
-          autoCorrect={false}
-          autoCapitalize="none"
-          returnKeyType="search"
-        />
+      <TextInput
+        returnKeyType="search"
+        autoCorrect={false}
+        {...inputProps}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.textMuted}
+        style={styles.input}
+      />
 
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            onPress={() => onSearchChange('')}
-            hitSlop={{
-              top: 8,
-              bottom: 8,
-              left: 8,
-              right: 8,
-            }}
-          >
-            <Icon name="close-circle" size={18} color={DARK.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
+      {value.length > 0 && (
+        <TouchableOpacity
+          onPress={() => onChangeText('')}
+          activeOpacity={0.75}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="close-circle" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    paddingTop: 12,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-  },
+const createStyles = (theme: AppTheme) => {
+  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
 
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 48,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: DARK.border,
-    backgroundColor: DARK.searchBg,
-  },
-
-  searchIcon: {
-    marginRight: 8,
-  },
-
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: DARK.textPrimary,
-  },
-});
+  return StyleSheet.create({
+    wrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.cardBgVariant,
+      borderRadius: borderRadius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.md,
+      height: 44,
+    },
+    icon: { marginRight: spacing.sm },
+    input: {
+      flex: 1,
+      fontSize: typography.sm,
+      fontFamily: fontFamilies.regular,
+      color: colors.textPrimary,
+      paddingVertical: 0,
+    },
+  });
+};
 
 export default React.memo(SearchBar);

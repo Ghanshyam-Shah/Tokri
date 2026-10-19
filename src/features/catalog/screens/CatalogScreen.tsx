@@ -1,30 +1,26 @@
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo, } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
   Image,
   Dimensions,
-  ScrollView,
-  Animated,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
-import { CATEGORIES, PRODUCTS  } from '../../../Data/DummyData';
-import {Category, Product} from '../../../Data/types'
-
+import { CATEGORIES, PRODUCTS } from '../../../Data/DummyData';
+import { Product } from '../../../Data/types'
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
+import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
+import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
+import EmptyState from '../../../shared/components/states/EmptyState';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
 
@@ -34,86 +30,6 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_GAP = 12;
 const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
 const IMAGE_H = CARD_W * 0.82;
-
-
-// ═══════════════════════════════════════════════════════════════════
-// Category Chips
-// ═══════════════════════════════════════════════════════════════════
-const CategoryChips = React.memo(
-  ({
-    categories,
-    selected,
-    onSelect,
-  }: {
-    categories: Category[];
-    selected: string;
-    onSelect: (id: string) => void;
-  }) => {
-    const { theme } = useTheme();
-    const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
-
-    const ch = useMemo(
-      () =>
-        StyleSheet.create({
-          scrollStyle: { flexGrow: 0, flexShrink: 0 },
-          row: {
-            flexDirection: 'row',
-            gap: spacing.sm,
-            paddingHorizontal: H_PADDING,
-            paddingVertical: spacing.xs,
-          },
-          chip: {
-            flexShrink: 0,
-            paddingHorizontal: spacing.md + 2,
-            paddingVertical: spacing.sm,
-            borderRadius: borderRadius.full,
-            borderWidth: 1,
-          },
-          active: {
-            backgroundColor: colors.primary,
-            borderColor: colors.primary,
-          },
-          inactive: { borderColor: colors.border },
-          text: {
-            fontSize: typography.xs + 1,
-            fontFamily: fontFamilies.medium,
-          },
-        }),
-      [colors, spacing, borderRadius, typography, fontFamilies],
-    );
-
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={ch.row}
-        style={ch.scrollStyle}
-      >
-        {categories.map(cat => {
-          const active = selected === cat.id;
-          return (
-            <TouchableOpacity
-              key={cat.id}
-              onPress={() => onSelect(cat.id)}
-              activeOpacity={0.8}
-              style={[ch.chip, active ? ch.active : ch.inactive]}
-            >
-              <Text
-                style={[
-                  ch.text,
-                  { color: active ? colors.onPrimary : colors.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {cat.label} / {cat.labelHindi}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  },
-);
 
 // ═══════════════════════════════════════════════════════════════════
 // Product Card — catalog-management version (Edit button + unit)
@@ -245,42 +161,6 @@ const createCardStyles = (theme: Theme) => {
   });
 };
 
-// ─── Empty state ──────────────────────────────────────────────────
-const EmptyList = React.memo(() => {
-  const { theme } = useTheme();
-  const { colors, spacing, typography, fontFamilies } = theme;
-
-  const e = useMemo(
-    () =>
-      StyleSheet.create({
-        wrap: {
-          alignItems: 'center',
-          paddingVertical: spacing.giant,
-          gap: spacing.sm + 2,
-        },
-        title: {
-          color: colors.textPrimary,
-          fontSize: typography.md,
-          fontFamily: fontFamilies.semiBold,
-        },
-        sub: {
-          color: colors.textMuted,
-          fontSize: typography.xs + 1,
-          fontFamily: fontFamilies.regular,
-        },
-      }),
-    [colors, spacing, typography, fontFamilies],
-  );
-
-  return (
-    <View style={e.wrap}>
-      <Icon name="basket-off-outline" size={52} color={colors.textMuted} />
-      <Text style={e.title}>Koi product nahi mila</Text>
-      <Text style={e.sub}>Try another search or category</Text>
-    </View>
-  );
-});
-
 // ═══════════════════════════════════════════════════════════════════
 // MAIN SCREEN
 // ═══════════════════════════════════════════════════════════════════
@@ -305,6 +185,8 @@ const CatalogScreen: React.FC = () => {
       return catOk && srchOk;
     });
   }, [selectedCategory, searchQuery]);
+  const { barHeight, barTranslateY, onBarLayout, handleScroll } =
+    useCollapsibleBar();
 
   // header "+" → AddItem screen
   const handleAddProduct = useCallback(() => {
@@ -329,48 +211,7 @@ const CatalogScreen: React.FC = () => {
   const keyExtractor = useCallback((item: Product) => item.id, []);
 
   // ═══ collapsible search + chips bar ═══
-  const [barHeight, setBarHeight] = useState(116);
-  const barTranslateY = useRef(new Animated.Value(0)).current;
-  const barHidden = useRef(false);
-  const lastOffset = useRef(0);
 
-  const showBar = useCallback(() => {
-    if (!barHidden.current) return;
-    barHidden.current = false;
-    Animated.timing(barTranslateY, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY]);
-
-  const hideBar = useCallback(() => {
-    if (barHidden.current) return;
-    barHidden.current = true;
-    Animated.timing(barTranslateY, {
-      toValue: -barHeight,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY, barHeight]);
-
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = e.nativeEvent.contentOffset.y;
-      const diff = y - lastOffset.current;
-
-      if (y <= 4) {
-        showBar();
-      } else if (diff > 2 && y > barHeight) {
-        hideBar();
-      } else if (diff < -2) {
-        showBar();
-      }
-
-      lastOffset.current = y;
-    },
-    [barHeight, showBar, hideBar],
-  );
 
   return (
     <View style={s.root}>
@@ -385,47 +226,16 @@ const CatalogScreen: React.FC = () => {
 
         {/* ── Body: collapsible search/chips overlay + product grid ── */}
         <View style={s.body}>
-          <Animated.View
-            onLayout={e => setBarHeight(e.nativeEvent.layout.height)}
-            style={[
-              s.collapsibleBar,
-              { transform: [{ translateY: barTranslateY }] },
-            ]}
-          >
-            <View style={s.searchWrap}>
-              <Icon
-                name="magnify"
-                size={20}
-                color={colors.textMuted}
-                style={s.searchIcon}
-              />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search catalog / सूची खोजें..."
-                placeholderTextColor={colors.textMuted}
-                style={s.searchInput}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setSearchQuery('')}
-                  activeOpacity={0.75}
-                >
-                  <Icon
-                    name="close-circle"
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <CategoryChips
-              categories={CATEGORIES}
-              selected={selectedCategory}
-              onSelect={setSelectedCategory}
-            />
-          </Animated.View>
+          <CollapsibleFilterBar
+            translateY={barTranslateY}
+            onLayout={onBarLayout}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search catalog / सूची खोजें..."
+            chips={CATEGORIES}
+            selectedChipId={selectedCategory}
+            onSelectChip={setSelectedCategory}
+          />
 
           <FlatList
             data={filteredProducts}
@@ -441,8 +251,13 @@ const CatalogScreen: React.FC = () => {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={<EmptyList />}
-            removeClippedSubviews
+            ListEmptyComponent={
+              <EmptyState
+                icon="basket-off-outline"
+                title="Koi product nahi mila"
+                subtitle="Try another search or category"
+              />
+            } removeClippedSubviews
             maxToRenderPerBatch={6}
             windowSize={10}
             initialNumToRender={6}
@@ -461,38 +276,6 @@ const createStyles = (theme: Theme) => {
     root: { flex: 1, backgroundColor: colors.appBackground },
     safeArea: { flex: 1, backgroundColor: colors.appBackground },
     body: { flex: 1 },
-
-    collapsibleBar: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 10,
-      backgroundColor: colors.appBackground,
-      paddingBottom: spacing.sm,
-    },
-
-    searchWrap: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginHorizontal: H_PADDING,
-      marginTop: spacing.md,
-      marginBottom: spacing.sm,
-      backgroundColor: colors.cardBgVariant,
-      borderRadius: borderRadius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      paddingHorizontal: spacing.md,
-      height: 44,
-    },
-    searchIcon: { marginRight: spacing.sm },
-    searchInput: {
-      flex: 1,
-      fontSize: typography.sm,
-      fontFamily: fontFamilies.regular,
-      color: colors.textPrimary,
-      paddingVertical: 0,
-    },
 
     gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
   });

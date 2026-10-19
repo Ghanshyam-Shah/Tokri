@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
+import ChipGroup from '../../../shared/components/chips/ChipGroup';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
@@ -190,37 +190,12 @@ const NewListScreen: React.FC = () => {
             <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
               Type chuno <Text style={styles.fieldLabelEn}>/ List type</Text>
             </Text>
-            <View style={styles.chipsWrap}>
-              {LIST_TYPES.map(opt => {
-                const selected = listType === opt.id;
-                return (
-                  <TouchableOpacity
-                    key={opt.id}
-                    onPress={() => setListType(opt.id)}
-                    activeOpacity={0.8}
-                    style={[
-                      styles.chip,
-                      selected ? styles.chipActive : styles.chipInactive,
-                    ]}
-                  >
-                    <Icon
-                      name={opt.icon}
-                      size={13}
-                      color={selected ? onPrimary : colors.textMuted}
-                      style={styles.chipIcon}
-                    />
-                    <Text
-                      style={[
-                        styles.chipText,
-                        { color: selected ? onPrimary : colors.textMuted },
-                      ]}
-                    >
-                      {opt.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            <ChipGroup
+              items={LIST_TYPES}
+              selectedId={listType}
+              onSelect={id => setListType(id as ListType)}
+              variant="filled"
+            />
           </View>
 
           {/* ════ SECTION 2 — TAAREEKH ════ */}
@@ -403,30 +378,6 @@ const createStyles = (theme: Theme) => {
       fontSize: typography.sm,
       fontFamily: fontFamilies.medium,
       color: colors.textPrimary,
-    },
-
-    // ── Chips ──
-    chipsWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-    chip: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: spacing.md + 2,
-      paddingVertical: spacing.sm,
-      borderRadius: borderRadius.full,
-      borderWidth: 1.5,
-    },
-    chipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    chipInactive: {
-      borderColor: colors.border,
-      backgroundColor: inputBg,
-    },
-    chipIcon: { marginRight: 5 },
-    chipText: {
-      fontSize: typography.xs + 1,
-      fontFamily: fontFamilies.medium,
     },
 
     // ── Date row ──

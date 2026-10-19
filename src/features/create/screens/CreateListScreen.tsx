@@ -19,21 +19,20 @@ import {
   Image,
   Dimensions,
   ScrollView,
-  Animated,
   Modal,
   KeyboardAvoidingView,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
+import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
+import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
+import EmptyState from '../../../shared/components/states/EmptyState';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -195,26 +194,6 @@ const createStyles = (theme: Theme) => {
   const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
 
   return {
-    // ── Category chips ──
-    ch: StyleSheet.create({
-      scrollStyle: { flexGrow: 0, flexShrink: 0 },
-      row: {
-        flexDirection: 'row',
-        gap: spacing.sm,
-        paddingHorizontal: H_PADDING,
-        paddingVertical: spacing.xs,
-      },
-      chip: {
-        flexShrink: 0,
-        paddingHorizontal: spacing.md + 2,
-        paddingVertical: spacing.sm,
-        borderRadius: borderRadius.full,
-        borderWidth: 1,
-      },
-      active: { backgroundColor: colors.primary, borderColor: colors.primary },
-      inactive: { borderColor: colors.border },
-      text: { fontSize: typography.xs + 1, fontFamily: fontFamilies.medium },
-    }),
 
     // ── Quantity stepper ──
     qs: StyleSheet.create({
@@ -505,25 +484,6 @@ const createStyles = (theme: Theme) => {
       },
     }),
 
-    // ── Empty state ──
-    es: StyleSheet.create({
-      wrap: {
-        alignItems: 'center',
-        paddingVertical: spacing.giant,
-        gap: spacing.sm + 2,
-      },
-      title: {
-        color: colors.textPrimary,
-        fontSize: typography.md,
-        fontFamily: fontFamilies.semiBold,
-      },
-      sub: {
-        color: colors.textMuted,
-        fontSize: typography.xs + 1,
-        fontFamily: fontFamilies.regular,
-      },
-    }),
-
     // ── List preview modal ──
     pm: StyleSheet.create({
       overlay: { flex: 1, justifyContent: 'flex-end' },
@@ -644,38 +604,6 @@ const createStyles = (theme: Theme) => {
       safeArea: { flex: 1, backgroundColor: colors.appBackground },
       body: { flex: 1 },
 
-      // absolute overlay: hide hone par gap nahi bachta; FlatList ka
-      // paddingTop (=barHeight) neeche jagah reserve karta hai.
-      collapsibleBar: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 10,
-        backgroundColor: colors.appBackground,
-        paddingBottom: spacing.sm,
-      },
-      searchWrap: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginHorizontal: H_PADDING,
-        marginTop: spacing.md,
-        marginBottom: spacing.sm,
-        backgroundColor: colors.cardBgVariant,
-        borderRadius: borderRadius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        paddingHorizontal: spacing.md,
-        height: 44,
-      },
-      searchIcon: { marginRight: spacing.sm },
-      searchInput: {
-        flex: 1,
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.regular,
-        color: colors.textPrimary,
-        paddingVertical: 0,
-      },
       gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
     }),
   };
@@ -701,51 +629,6 @@ const useStyles = () => {
 // ─── Category Chips ───────────────────────────────────────────────
 // flexShrink:0 (ScrollView + chip) aur numberOfLines={1}: chips compress nahi
 // hote chahe neeche grid kitna bhi bada ho.
-const CategoryChips = React.memo(
-  ({
-    categories,
-    selected,
-    onSelect,
-  }: {
-    categories: Category[];
-    selected: string;
-    onSelect: (id: string) => void;
-  }) => {
-    const { theme, ch } = useStyles();
-    const { colors } = theme;
-
-    return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={ch.row}
-        style={ch.scrollStyle}
-      >
-        {categories.map(cat => {
-          const active = selected === cat.id;
-          return (
-            <TouchableOpacity
-              key={cat.id}
-              onPress={() => onSelect(cat.id)}
-              activeOpacity={0.8}
-              style={[ch.chip, active ? ch.active : ch.inactive]}
-            >
-              <Text
-                style={[
-                  ch.text,
-                  { color: active ? colors.onPrimary : colors.textMuted },
-                ]}
-                numberOfLines={1}
-              >
-                {cat.label} / {cat.labelHindi}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-    );
-  },
-);
 
 // ─── Quantity Stepper ─────────────────────────────────────────────
 const QuantityStepper = React.memo(
@@ -1035,18 +918,6 @@ const ProductCard = React.memo(
   },
 );
 
-// ─── Empty state ──────────────────────────────────────────────────
-const EmptyList = React.memo(() => {
-  const { theme, es } = useStyles();
-  return (
-    <View style={es.wrap}>
-      <Icon name="basket-off-outline" size={52} color={theme.colors.textMuted} />
-      <Text style={es.title}>Koi product nahi mila</Text>
-      <Text style={es.sub}>Try another search or category</Text>
-    </View>
-  );
-});
-
 // ─── List Preview Modal (header ke receipt icon se khulta hai) ────
 const ListPreviewModal = React.memo(
   ({
@@ -1205,8 +1076,8 @@ const ActionBar = React.memo(
 const CreateListScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavProp>();
-  const { theme, s } = useStyles();
-  const { colors } = theme;
+  const { s } = useStyles();
+  // const { colors } = theme;
 
   const listName = route.params?.listName ?? 'Nayi List';
 
@@ -1234,7 +1105,7 @@ const CreateListScreen: React.FC = () => {
         'List save nahi hui',
         'Aap is list ko chhod ke jaana chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Cancel', style: 'cancel', onPress: () => { } },
           {
             text: 'Discard',
             style: 'destructive',
@@ -1394,48 +1265,8 @@ const CreateListScreen: React.FC = () => {
   const editingProduct = editingId ? selectedProducts[editingId] : null;
 
   // ═══ collapsible search + chips bar ═══
-  const [barHeight, setBarHeight] = useState(116);
-  const barTranslateY = useRef(new Animated.Value(0)).current;
-  const barHidden = useRef(false);
-  const lastOffset = useRef(0);
-
-  const showBar = useCallback(() => {
-    if (!barHidden.current) return;
-    barHidden.current = false;
-    Animated.timing(barTranslateY, {
-      toValue: 0,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY]);
-
-  const hideBar = useCallback(() => {
-    if (barHidden.current) return;
-    barHidden.current = true;
-    Animated.timing(barTranslateY, {
-      toValue: -barHeight,
-      duration: 220,
-      useNativeDriver: true,
-    }).start();
-  }, [barTranslateY, barHeight]);
-
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = e.nativeEvent.contentOffset.y;
-      const diff = y - lastOffset.current;
-
-      if (y <= 4) {
-        showBar();
-      } else if (diff > 2 && y > barHeight) {
-        hideBar();
-      } else if (diff < -2) {
-        showBar();
-      }
-
-      lastOffset.current = y;
-    },
-    [barHeight, showBar, hideBar],
-  );
+  const { barHeight, barTranslateY, onBarLayout, handleScroll } =
+    useCollapsibleBar();
 
   // ─── Render ─────────────────────────────────────────────────────
   return (
@@ -1454,47 +1285,16 @@ const CreateListScreen: React.FC = () => {
 
         {/* ── Body: collapsible search/chips overlay + product grid ── */}
         <View style={s.body}>
-          <Animated.View
-            onLayout={e => setBarHeight(e.nativeEvent.layout.height)}
-            style={[
-              s.collapsibleBar,
-              { transform: [{ translateY: barTranslateY }] },
-            ]}
-          >
-            <View style={s.searchWrap}>
-              <Icon
-                name="magnify"
-                size={20}
-                color={colors.textMuted}
-                style={s.searchIcon}
-              />
-              <TextInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder="Search catalog / सूची खोजें..."
-                placeholderTextColor={colors.textMuted}
-                style={s.searchInput}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setSearchQuery('')}
-                  activeOpacity={0.75}
-                >
-                  <Icon
-                    name="close-circle"
-                    size={18}
-                    color={colors.textMuted}
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <CategoryChips
-              categories={CATEGORIES}
-              selected={selectedCategory}
-              onSelect={setSelectedCategory}
-            />
-          </Animated.View>
+          <CollapsibleFilterBar
+            translateY={barTranslateY}
+            onLayout={onBarLayout}
+            searchValue={searchQuery}
+            onSearchChange={setSearchQuery}
+            searchPlaceholder="Search catalog / सूची खोजें..."
+            chips={CATEGORIES}
+            selectedChipId={selectedCategory}
+            onSelectChip={setSelectedCategory}
+          />
 
           <FlatList
             data={filteredProducts}
@@ -1510,7 +1310,13 @@ const CreateListScreen: React.FC = () => {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={<EmptyList />}
+            ListEmptyComponent={
+              <EmptyState
+                icon="basket-off-outline"
+                title="Koi product nahi mila"
+                subtitle="Try another search or category"
+              />
+            }
             removeClippedSubviews
             maxToRenderPerBatch={6}
             windowSize={10}
