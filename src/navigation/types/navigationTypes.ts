@@ -5,7 +5,7 @@ export interface ListItemParam {
   name: string;
   nameHindi: string;
   unit: string;
-  imageUrl: string;
+  imageUrl?: string;
   quantity: number;
   note?: string;
   categoryId?: string;

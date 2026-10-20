@@ -1,7 +1,10 @@
 // src/shared/components/chips/Chip.tsx
 //
-// Ek single pill/chip. Selected -> primary fill, unselected -> border only.
-// icon optional (NewListScreen ke chips baad me isi se banenge).
+// Ek single pill/chip. Selected -> primary fill.
+// variant:
+//   'outline' (default) -> unselected me sirf border   (search/filter rows)
+//   'filled'            -> unselected me halka background (forms / cards ke upar)
+// icon optional.
 
 import React, { useMemo } from 'react';
 import { Text, TouchableOpacity, StyleSheet } from 'react-native';
@@ -10,15 +13,24 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { AppTheme } from '../../../theme/types/theme.types';
 
+export type ChipVariant = 'outline' | 'filled';
+
 interface ChipProps {
   label: string;
   selected: boolean;
   onPress: () => void;
   /** MaterialCommunityIcons ka naam (optional) */
   icon?: string;
+  variant?: ChipVariant;
 }
 
-const Chip: React.FC<ChipProps> = ({ label, selected, onPress, icon }) => {
+const Chip: React.FC<ChipProps> = ({
+  label,
+  selected,
+  onPress,
+  icon,
+  variant = 'outline',
+}) => {
   const { theme } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -29,7 +41,14 @@ const Chip: React.FC<ChipProps> = ({ label, selected, onPress, icon }) => {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.8}
-      style={[styles.chip, selected ? styles.active : styles.inactive]}
+      style={[
+        styles.chip,
+        selected
+          ? styles.active
+          : variant === 'filled'
+            ? styles.inactiveFilled
+            : styles.inactive,
+      ]}
     >
       {icon ? (
         <Icon name={icon} size={13} color={contentColor} style={styles.icon} />
@@ -63,6 +82,10 @@ const createStyles = (theme: AppTheme) => {
     },
     inactive: {
       borderColor: colors.border,
+    },
+    inactiveFilled: {
+      borderColor: colors.border,
+      backgroundColor: colors.cardBgVariant,
     },
     icon: { marginRight: 5 },
     text: {

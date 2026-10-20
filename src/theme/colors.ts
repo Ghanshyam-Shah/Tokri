@@ -142,7 +142,8 @@ export const darkColors: ColorPalette = {
   // bottom tab
   bottomTabBar: '#263640',
   bottomTabIcon: '#BACDD6',
-  bottomTabIconActive: '#263640',
+  // bottomTabIconActive: '#263640',    abhi ke liye comment he
+  bottomTabIconActive: '#BACDD6',   // ye abhi ke liye lagaya he
   bottomTabIconBg: '#87CEEB',
 
   // cards

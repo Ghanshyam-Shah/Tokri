@@ -8,107 +8,10 @@ import { useTheme } from '../../../app/providers/ThemeProvider';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
+import { SAVED_LISTS, LIST_FILTERS } from '../../../Data/DummyData';
+import { SavedList } from '../../../Data/types';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
-
-type ListStatus = 'Draft' | 'Completed';
-type ListCategory = 'Monthly' | 'Weekly' | 'Festival' | 'Custom';
-
-interface SavedList {
-  id: string;
-  name: string;
-  date: string;
-  itemCount: number;
-  preview: string;
-  category: ListCategory;
-  status: ListStatus;
-}
-
-const MOCK_LISTS: SavedList[] = [
-  {
-    id: '1',
-    name: 'May 2025 Groceries',
-    date: '12 May 2025',
-    itemCount: 34,
-    preview: 'Tomatoes, Rice, Paneer, Milk, Dal...',
-    category: 'Monthly',
-    status: 'Completed',
-  },
-  {
-    id: '2',
-    name: 'Weekend Party Snacks',
-    date: '08 May 2025',
-    itemCount: 12,
-    preview: 'Chips, Coke, Cookies, Namkeen...',
-    category: 'Custom',
-    status: 'Draft',
-  },
-  {
-    id: '3',
-    name: 'Diwali Special',
-    date: '01 Nov 2024',
-    itemCount: 45,
-    preview: 'Ghee, Sugar, Dry Fruits, Maida...',
-    category: 'Festival',
-    status: 'Completed',
-  },
-  {
-    id: '4',
-    name: 'Weekly Veggies',
-    date: '28 Apr 2025',
-    itemCount: 8,
-    preview: 'Onion, Potato, Cabbage, Carrot...',
-    category: 'Weekly',
-    status: 'Completed',
-  },
-  {
-    id: '5',
-    name: 'May 2025 Groceries',
-    date: '12 May 2025',
-    itemCount: 34,
-    preview: 'Tomatoes, Rice, Paneer, Milk, Dal...',
-    category: 'Monthly',
-    status: 'Completed',
-  },
-  {
-    id: '6',
-    name: 'Weekend Party Snacks',
-    date: '08 May 2025',
-    itemCount: 12,
-    preview: 'Chips, Coke, Cookies, Namkeen...',
-    category: 'Custom',
-    status: 'Draft',
-  },
-  {
-    id: '7',
-    name: 'Diwali Special',
-    date: '01 Nov 2024',
-    itemCount: 45,
-    preview: 'Ghee, Sugar, Dry Fruits, Maida...',
-    category: 'Festival',
-    status: 'Completed',
-  },
-  {
-    id: '8',
-    name: 'Weekly Veggies',
-    date: '28 Apr 2025',
-    itemCount: 8,
-    preview: 'Onion, Potato, Cabbage, Carrot...',
-    category: 'Weekly',
-    status: 'Completed',
-  },
-];
-
-const FILTERS = [
-  { id: 'all', label: 'All', labelHindi: 'सभी' },
-  { id: 'Monthly', label: 'Monthly', labelHindi: 'मासिक' },
-  { id: 'Weekly', label: 'Weekly', labelHindi: 'साप्ताहिक' },
-  { id: 'Festival', label: 'Festival', labelHindi: 'त्योहार' },
-  { id: 'Drafts', label: 'Drafts', labelHindi: 'ड्राफ्ट' },
-];
-
-// ─── Category Chips: Catalog jaisi styling ──────────────────────────────
-
 
 // ─── Main Component ─────────────────────────────────────────────────────
 
@@ -125,7 +28,7 @@ const ListScreen = () => {
   const filteredLists = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
-    return MOCK_LISTS.filter(list => {
+    return SAVED_LISTS.filter(list => {
       const categoryMatches =
         activeFilter === 'all' ||
         (activeFilter === 'Drafts'
@@ -227,7 +130,7 @@ const ListScreen = () => {
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           searchPlaceholder="Search lists / सूची खोजें..."
-          chips={FILTERS}
+          chips={LIST_FILTERS}
           selectedChipId={activeFilter}
           onSelectChip={setActiveFilter}
         />

@@ -25,95 +25,22 @@ import SegmentedTabs, {
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
+import { LIST_TYPES, OLD_LISTS, MY_TEMPLATES } from '../../../Data/DummyData';
+import { ListType, ListSource } from '../../../Data/types';
 
 // ─── Navigation type ──────────────────────────────────────────────────────────
 type NavProp = NativeStackNavigationProp<AppStackParamList>;
 type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type ListType = 'monthly' | 'weekly' | 'festival' | 'custom';
 type SourceTab = 'old' | 'templates';
-
-interface ListTypeOption {
-  id: ListType;
-  label: string;
-  labelHindi: string;
-  icon: string;
-}
-
-interface SourceItem {
-  id: string;
-  name: string;
-  itemCount: number;
-  meta: string;
-}
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-const LIST_TYPES: ListTypeOption[] = [
-  {
-    id: 'monthly',
-    label: 'Monthly Ration',
-    labelHindi: 'मासिक राशन',
-    icon: 'calendar-month',
-  },
-  {
-    id: 'weekly',
-    label: 'Weekly',
-    labelHindi: 'साप्ताहिक',
-    icon: 'calendar-week',
-  },
-  {
-    id: 'festival',
-    label: 'Festival',
-    labelHindi: 'त्योहार',
-    icon: 'star-crescent',
-  },
-  { id: 'custom', label: 'Custom', labelHindi: 'कस्टम', icon: 'tune-variant' },
-];
 
 const SOURCE_TABS: SegmentTab[] = [
   { id: 'old', label: 'Old Lists', icon: 'history' },
   { id: 'templates', label: 'My Templates', icon: 'bookmark-outline' },
 ];
 
-// TODO: ye dummy data hai — baad me storage / backend se aayega
-const OLD_LISTS: SourceItem[] = [
-  {
-    id: 'old-1',
-    name: 'April 2025 ki List',
-    itemCount: 34,
-    meta: 'Pichli list se',
-  },
-  {
-    id: 'old-2',
-    name: 'Diwali Special',
-    itemCount: 45,
-    meta: 'Festival list',
-  },
-  {
-    id: 'old-3',
-    name: 'Weekly Veggies',
-    itemCount: 8,
-    meta: 'Weekly list',
-  },
-];
-
-const MY_TEMPLATES: SourceItem[] = [
-  {
-    id: 'tpl-1',
-    name: 'Monthly Basic Ration',
-    itemCount: 28,
-    meta: 'Mera template',
-  },
-  {
-    id: 'tpl-2',
-    name: 'Party Snacks',
-    itemCount: 12,
-    meta: 'Mera template',
-  },
-];
-
-const SOURCES: Record<SourceTab, SourceItem[]> = {
+const SOURCES: Record<SourceTab, ListSource[]> = {
   old: OLD_LISTS,
   templates: MY_TEMPLATES,
 };

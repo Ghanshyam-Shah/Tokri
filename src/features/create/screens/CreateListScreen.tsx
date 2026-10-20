@@ -37,6 +37,8 @@ import ProductCard, {
   CARD_GAP,
   GRID_H_PADDING,
 } from '../../../shared/components/product/ProductCard';
+import { CATEGORIES, PRODUCTS } from '../../../Data/DummyData';
+import { Product } from '../../../Data/types';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -51,137 +53,11 @@ const H_PADDING = 16;
 const BOTTOM_BAR_H = 78;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface Category {
-  id: string;
-  label: string;
-  labelHindi: string;
-}
-interface Product {
-  id: string;
-  name: string;
-  nameHindi: string;
-  unit: string;
-  categoryId: string;
-  imageUrl: string;
-  isTopPick: boolean;
-}
+
 interface SelectedP extends Product {
   quantity: number;
   note?: string;
 }
-
-// ─── Static data ──────────────────────────────────────────────────────────────
-const CATEGORIES: Category[] = [
-  { id: 'all', label: 'All', labelHindi: 'सभी' },
-  { id: 'vegetables', label: 'Vegetables', labelHindi: 'सब्जियां' },
-  { id: 'dairy', label: 'Dairy', labelHindi: 'डेयरी' },
-  { id: 'grains', label: 'Grains', labelHindi: 'अनाज' },
-  { id: 'spices', label: 'Spices', labelHindi: 'मसाले' },
-  { id: 'snacks', label: 'Snacks', labelHindi: 'स्नैक्स' },
-];
-
-const PRODUCTS: Product[] = [
-  {
-    id: '1',
-    name: 'Fresh Tomatoes',
-    nameHindi: 'ताजा टमाटर',
-    unit: '1kg',
-    categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1546094096-0df4bcabd777?w=400&q=80',
-    isTopPick: true,
-  },
-  {
-    id: '2',
-    name: 'Organic Milk',
-    nameHindi: 'जैविक दूध',
-    unit: '1L',
-    categoryId: 'dairy',
-    imageUrl:
-      'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=400&q=80',
-    isTopPick: false,
-  },
-  {
-    id: '3',
-    name: 'Basmati Rice',
-    nameHindi: 'बासमती चावल',
-    unit: '5kg',
-    categoryId: 'grains',
-    imageUrl:
-      'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&q=80',
-    isTopPick: true,
-  },
-  {
-    id: '4',
-    name: 'Toor Dal',
-    nameHindi: 'अरहर दाल',
-    unit: '1kg',
-    categoryId: 'grains',
-    imageUrl:
-      'https://images.unsplash.com/photo-1599909631565-9921aaabb4a7?w=400&q=80',
-    isTopPick: false,
-  },
-  {
-    id: '5',
-    name: 'Yellow Bell Pepper',
-    nameHindi: 'पीली शिमला मिर्च',
-    unit: '250g',
-    categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1563565375-f3fdfdbefa83?w=400&q=80',
-    isTopPick: true,
-  },
-  {
-    id: '6',
-    name: 'Penne Pasta',
-    nameHindi: 'पास्ता',
-    unit: '500g',
-    categoryId: 'snacks',
-    imageUrl:
-      'https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=400&q=80',
-    isTopPick: false,
-  },
-  {
-    id: '7',
-    name: 'Fresh Paneer',
-    nameHindi: 'ताजा पनीर',
-    unit: '200g',
-    categoryId: 'dairy',
-    imageUrl:
-      'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=400&q=80',
-    isTopPick: true,
-  },
-  {
-    id: '8',
-    name: 'Carrots',
-    nameHindi: 'गाजर',
-    unit: '500g',
-    categoryId: 'vegetables',
-    imageUrl:
-      'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&q=80',
-    isTopPick: false,
-  },
-  {
-    id: '9',
-    name: 'Turmeric Powder',
-    nameHindi: 'हल्दी पाउडर',
-    unit: '200g',
-    categoryId: 'spices',
-    imageUrl:
-      'https://images.unsplash.com/photo-1615485500704-8e990f9900f7?w=400&q=80',
-    isTopPick: true,
-  },
-  {
-    id: '10',
-    name: 'Coriander Seeds',
-    nameHindi: 'धनिया',
-    unit: '100g',
-    categoryId: 'spices',
-    imageUrl:
-      'https://images.unsplash.com/photo-1506368083636-6defb67639b2?w=400&q=80',
-    isTopPick: false,
-  },
-];
 
 // ═══════════════════════════════════════════════════════════════════
 // STYLES (theme se) — saare sub-components ke liye ek jagah
@@ -377,42 +253,42 @@ const createStyles = (theme: Theme) => {
     // ── Product card ──
     // borderWidth hamesha 1.5; select hone par sirf color badalta hai, taaki
     // grid reflow na ho.
-   // ── Product card footer (shared ProductCard ke andar jaata hai) ──
-pc: StyleSheet.create({
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  unitPill: {
-    backgroundColor: colors.cardBgVariant,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: 6,
-  },
-  unitTxt: {
-    fontSize: typography.xs,
-    fontFamily: fontFamilies.semiBold,
-    color: colors.textMuted,
-  },
-  addBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: borderRadius.md - 2,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-}),
+    // ── Product card footer (shared ProductCard ke andar jaata hai) ──
+    pc: StyleSheet.create({
+      bottomRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      },
+      unitPill: {
+        backgroundColor: colors.cardBgVariant,
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 6,
+      },
+      unitTxt: {
+        fontSize: typography.xs,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.textMuted,
+      },
+      addBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: borderRadius.md - 2,
+        backgroundColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      editBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: borderRadius.sm,
+        borderWidth: 1.5,
+        borderColor: colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    }),
     // ── List preview modal ──
     pm: StyleSheet.create({
       overlay: { flex: 1, justifyContent: 'flex-end' },
@@ -532,7 +408,7 @@ pc: StyleSheet.create({
       root: { flex: 1, backgroundColor: colors.appBackground },
       safeArea: { flex: 1, backgroundColor: colors.appBackground },
       body: { flex: 1 },
-gridContent: { paddingHorizontal: GRID_H_PADDING, gap: CARD_GAP },
+      gridContent: { paddingHorizontal: GRID_H_PADDING, gap: CARD_GAP },
     }),
   };
 };

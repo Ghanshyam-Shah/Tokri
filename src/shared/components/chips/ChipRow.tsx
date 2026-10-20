@@ -25,12 +25,19 @@ interface ChipRowProps {
   items: ChipItem[];
   selectedId: string;
   onSelect: (id: string) => void;
+  /** true -> item.icon chips me dikhao (default: false) */
+  showIcons?: boolean;
 }
 
 export const formatLabel = (item: ChipItem) =>
   item.labelHindi ? `${item.label} / ${item.labelHindi}` : item.label;
 
-const ChipRow: React.FC<ChipRowProps> = ({ items, selectedId, onSelect }) => {
+const ChipRow: React.FC<ChipRowProps> = ({
+  items,
+  selectedId,
+  onSelect,
+  showIcons = false,
+}) => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -46,7 +53,7 @@ const ChipRow: React.FC<ChipRowProps> = ({ items, selectedId, onSelect }) => {
         <Chip
           key={item.id}
           label={formatLabel(item)}
-          icon={item.icon}
+          icon={showIcons ? item.icon : undefined}
           selected={selectedId === item.id}
           onPress={() => onSelect(item.id)}
         />

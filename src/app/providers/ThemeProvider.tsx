@@ -26,7 +26,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   // System theme detect karo (iOS/Android dono pe kaam karta hai)
   const systemColorScheme = useColorScheme();
-  const [isDark, setIsDark] = useState(systemColorScheme === "dark");
+  // const [isDark, setIsDark] = useState(systemColorScheme === "dark");            // Defalt Light
+  const [isDark, setIsDark] = useState(systemColorScheme === "light");           // Defalt Dark
+
 
   const toggleTheme = useCallback(() => {
     setIsDark((prev) => !prev);
