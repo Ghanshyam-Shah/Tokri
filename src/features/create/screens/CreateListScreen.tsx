@@ -33,9 +33,6 @@ import { useTheme } from '../../../app/providers/ThemeProvider';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
-import {CATEGORIES} from '../../../Data/DummyData'
-import {Category} from '../../../Data/types'
-
 import ProductCard, {
   CARD_GAP,
   GRID_H_PADDING,
@@ -54,11 +51,11 @@ const H_PADDING = 16;
 const BOTTOM_BAR_H = 78;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-// interface Category {
-//   id: string;
-//   label: string;
-//   labelHindi: string;
-// }
+interface Category {
+  id: string;
+  label: string;
+  labelHindi: string;
+}
 interface Product {
   id: string;
   name: string;
@@ -74,14 +71,14 @@ interface SelectedP extends Product {
 }
 
 // ─── Static data ──────────────────────────────────────────────────────────────
-// const CATEGORIES: Category[] = [
-//   { id: 'all', label: 'All', labelHindi: 'सभी' },
-//   { id: 'vegetables', label: 'Vegetables', labelHindi: 'सब्जियां' },
-//   { id: 'dairy', label: 'Dairy', labelHindi: 'डेयरी' },
-//   { id: 'grains', label: 'Grains', labelHindi: 'अनाज' },
-//   { id: 'spices', label: 'Spices', labelHindi: 'मसाले' },
-//   { id: 'snacks', label: 'Snacks', labelHindi: 'स्नैक्स' },
-// ];
+const CATEGORIES: Category[] = [
+  { id: 'all', label: 'All', labelHindi: 'सभी' },
+  { id: 'vegetables', label: 'Vegetables', labelHindi: 'सब्जियां' },
+  { id: 'dairy', label: 'Dairy', labelHindi: 'डेयरी' },
+  { id: 'grains', label: 'Grains', labelHindi: 'अनाज' },
+  { id: 'spices', label: 'Spices', labelHindi: 'मसाले' },
+  { id: 'snacks', label: 'Snacks', labelHindi: 'स्नैक्स' },
+];
 
 const PRODUCTS: Product[] = [
   {
@@ -535,8 +532,7 @@ pc: StyleSheet.create({
       root: { flex: 1, backgroundColor: colors.appBackground },
       safeArea: { flex: 1, backgroundColor: colors.appBackground },
       body: { flex: 1 },
-
-      gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
+gridContent: { paddingHorizontal: GRID_H_PADDING, gap: CARD_GAP },
     }),
   };
 };

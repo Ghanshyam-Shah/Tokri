@@ -5,8 +5,7 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Image,
-  Dimensions,
+
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,120 +20,45 @@ import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
+import ProductCard, {
+  CARD_GAP,
+  GRID_H_PADDING,
+} from '../../../shared/components/product/ProductCard';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
 
-// ─── Layout constants (theme se independent) ──────────────────────────────────
-const H_PADDING = 16;
-const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_GAP = 12;
-const CARD_W = (SCREEN_W - H_PADDING * 2 - CARD_GAP) / 2;
-const IMAGE_H = CARD_W * 0.82;
-
 // ═══════════════════════════════════════════════════════════════════
-// Product Card — catalog-management version (Edit button + unit)
+// Catalog card = shared ProductCard + Edit footer
 // ═══════════════════════════════════════════════════════════════════
-const ProductCard = React.memo(
+const CatalogProductCard = React.memo(
   ({ product, onEdit }: { product: Product; onEdit: (id: string) => void }) => {
     const { theme } = useTheme();
     const { colors } = theme;
-    const pc = useMemo(() => createCardStyles(theme), [theme]);
+    const st = useMemo(() => createCardStyles(theme), [theme]);
 
     return (
-      <View style={pc.card}>
-        <View style={pc.imgWrap}>
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={pc.img}
-            resizeMode="cover"
-          />
-          {product.isTopPick && (
-            <View style={pc.topPick}>
-              <Text style={pc.topPickTxt}>TOP PICK</Text>
-            </View>
-          )}
-        </View>
+      <ProductCard product={product}>
+        <TouchableOpacity
+          onPress={() => onEdit(product.id)}
+          activeOpacity={0.85}
+          style={st.editBtn}
+        >
+          <Text style={st.editBtnUnit}>{product.unit}</Text>
 
-        <View style={pc.body}>
-          <Text style={pc.name} numberOfLines={1}>
-            {product.name}
-          </Text>
-          <Text style={pc.hindi} numberOfLines={1}>
-            {product.nameHindi}
-          </Text>
-
-          <TouchableOpacity
-            onPress={() => onEdit(product.id)}
-            activeOpacity={0.85}
-            style={pc.editBtn}
-          >
-            <Text style={pc.editBtnUnit}>{product.unit}</Text>
-
-            <View style={pc.editBtnLeft}>
-              <Icon name="pencil-outline" size={15} color={colors.primary} />
-              <Text style={pc.editBtnTxt}>Edit</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+          <View style={st.editBtnLeft}>
+            <Icon name="pencil-outline" size={15} color={colors.primary} />
+            <Text style={st.editBtnTxt}>Edit</Text>
+          </View>
+        </TouchableOpacity>
+      </ProductCard>
     );
   },
 );
 
 const createCardStyles = (theme: Theme) => {
-  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
-    theme;
+  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
 
   return StyleSheet.create({
-    card: {
-      width: CARD_W,
-      backgroundColor: colors.cardBg,
-      borderRadius: borderRadius.lg,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: colors.border,
-      ...shadows.sm,
-    },
-    imgWrap: {
-      width: '100%',
-      height: IMAGE_H,
-      backgroundColor: colors.cardBgVariant,
-      overflow: 'hidden',
-    },
-    img: { width: '100%', height: '100%' },
-    topPick: {
-      position: 'absolute',
-      top: 0,
-      right: 0,
-      backgroundColor: colors.primary,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 5,
-      borderBottomLeftRadius: borderRadius.md - 2,
-    },
-    topPickTxt: {
-      fontSize: typography.xs - 2,
-      fontFamily: fontFamilies.bold,
-      color: colors.onPrimary,
-      letterSpacing: 0.8,
-    },
-    body: {
-      paddingHorizontal: spacing.sm + 2,
-      paddingTop: 9,
-      paddingBottom: spacing.sm + 2,
-      gap: 2,
-    },
-    name: {
-      fontSize: typography.sm,
-      fontFamily: fontFamilies.bold,
-      color: colors.textPrimary,
-      letterSpacing: 0.1,
-    },
-    hindi: {
-      fontSize: typography.xs,
-      fontFamily: fontFamilies.hindi ?? fontFamilies.regular,
-      color: colors.textMuted,
-      marginBottom: spacing.sm,
-    },
     editBtn: {
       width: '100%',
       flexDirection: 'row',
@@ -145,7 +69,7 @@ const createCardStyles = (theme: Theme) => {
       borderRadius: borderRadius.md - 2,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.primaryMuted, // primary 6-digit hex hona chahiye
+      backgroundColor: colors.primaryMuted,
     },
     editBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     editBtnTxt: {
@@ -203,8 +127,7 @@ const CatalogScreen: React.FC = () => {
 
   const renderItem = useCallback(
     ({ item }: { item: Product }) => (
-      <ProductCard product={item} onEdit={handleEditProduct} />
-    ),
+      <CatalogProductCard product={item} onEdit={handleEditProduct} />),
     [handleEditProduct],
   );
 
@@ -270,14 +193,13 @@ const CatalogScreen: React.FC = () => {
 
 // ─── Styles (theme se) ────────────────────────────────────────────
 const createStyles = (theme: Theme) => {
-  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
+  const { colors, spacing, } = theme;
 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.appBackground },
     safeArea: { flex: 1, backgroundColor: colors.appBackground },
     body: { flex: 1 },
-
-    gridContent: { paddingHorizontal: H_PADDING, gap: CARD_GAP },
+gridContent: { paddingHorizontal: GRID_H_PADDING, gap: CARD_GAP },
   });
 };
 

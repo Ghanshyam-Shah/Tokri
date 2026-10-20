@@ -16,7 +16,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import ChipGroup from '../../../shared/components/chips/ChipGroup';
+import SegmentedTabs, {
+  SegmentTab,
+} from '../../../shared/components/tabs/SegmentedTabs';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
@@ -27,12 +32,20 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ListType = 'monthly' | 'weekly' | 'festival' | 'custom';
+type SourceTab = 'old' | 'templates';
 
 interface ListTypeOption {
   id: ListType;
   label: string;
   labelHindi: string;
   icon: string;
+}
+
+interface SourceItem {
+  id: string;
+  name: string;
+  itemCount: number;
+  meta: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -58,22 +71,73 @@ const LIST_TYPES: ListTypeOption[] = [
   { id: 'custom', label: 'Custom', labelHindi: 'कस्टम', icon: 'tune-variant' },
 ];
 
-const LAST_LIST = {
-  name: 'April 2025 ki List',
-  itemCount: 34,
-  label: 'Pichli list se',
+const SOURCE_TABS: SegmentTab[] = [
+  { id: 'old', label: 'Old Lists', icon: 'history' },
+  { id: 'templates', label: 'My Templates', icon: 'bookmark-outline' },
+];
+
+// TODO: ye dummy data hai — baad me storage / backend se aayega
+const OLD_LISTS: SourceItem[] = [
+  {
+    id: 'old-1',
+    name: 'April 2025 ki List',
+    itemCount: 34,
+    meta: 'Pichli list se',
+  },
+  {
+    id: 'old-2',
+    name: 'Diwali Special',
+    itemCount: 45,
+    meta: 'Festival list',
+  },
+  {
+    id: 'old-3',
+    name: 'Weekly Veggies',
+    itemCount: 8,
+    meta: 'Weekly list',
+  },
+];
+
+const MY_TEMPLATES: SourceItem[] = [
+  {
+    id: 'tpl-1',
+    name: 'Monthly Basic Ration',
+    itemCount: 28,
+    meta: 'Mera template',
+  },
+  {
+    id: 'tpl-2',
+    name: 'Party Snacks',
+    itemCount: 12,
+    meta: 'Mera template',
+  },
+];
+
+const SOURCES: Record<SourceTab, SourceItem[]> = {
+  old: OLD_LISTS,
+  templates: MY_TEMPLATES,
 };
 
-const getMonthRange = () => {
-  const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const fmt = (d: Date) =>
-    `${String(d.getDate()).padStart(2, '0')} ${d.toLocaleString('en-IN', {
-      month: 'short',
-    })} ${d.getFullYear()}`;
-  return { from: fmt(first), to: fmt(last) };
+const EMPTY_TEXT: Record<SourceTab, string> = {
+  old: 'Abhi koi purani list nahi hai.',
+  templates: 'Abhi koi template save nahi hua.',
 };
+
+const formatDate = (d: Date) =>
+  `${String(d.getDate()).padStart(2, '0')} ${d.toLocaleString('en-IN', {
+    month: 'short',
+  })} ${d.getFullYear()}`;
+
+const isToday = (d: Date) => {
+  const now = new Date();
+  return (
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  );
+};
+
+
 
 // ─── SectionLabel ─────────────────────────────────────────────────────────────
 const SectionLabel = React.memo(
@@ -125,7 +189,7 @@ const SectionLabel = React.memo(
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const NewListScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
-  const { theme } = useTheme();
+  const { theme, isDark } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
 
@@ -134,11 +198,42 @@ const NewListScreen: React.FC = () => {
 
   const [listName, setListName] = useState('');
   const [listType, setListType] = useState<ListType>('monthly');
-  const [useTemplate, setUseTemplate] = useState(false);
 
-  const { from, to } = getMonthRange();
+  // Start date: default = aaj ki date
+  const [startDate, setStartDate] = useState<Date>(() => new Date());
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Template section: tab + selected item (ek hi select hota hai)
+  const [sourceTab, setSourceTab] = useState<SourceTab>('old');
+  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
+
+  const sourceItems = SOURCES[sourceTab];
 
   // ── Handlers ──
+  // Date chun li (Android: OK dabane par, iOS: calendar me din chunne par)
+const handleDateValueChange = useCallback(
+  (_event: unknown, date: Date) => {
+    setShowPicker(false);
+    setStartDate(date);
+  },
+  [],
+);
+
+// Bina chune band kiya (Android: Cancel / bahar tap)
+const handleDateDismiss = useCallback(() => {
+  setShowPicker(false);
+}, []);
+
+  // tab badalne par purana selection hata do (dusre tab ka item hidden rehta)
+  const handleSourceTabChange = useCallback((id: string) => {
+    setSourceTab(id as SourceTab);
+    setSelectedSourceId(null);
+  }, []);
+
+  const handleToggleSource = useCallback((id: string) => {
+    setSelectedSourceId(prev => (prev === id ? null : id));
+  }, []);
+
   const handleCreate = useCallback(() => {
     if (!listName.trim()) {
       Alert.alert('Naam zaroori hai', 'List ka naam daalein pehle.');
@@ -147,8 +242,10 @@ const NewListScreen: React.FC = () => {
     navigation.navigate('CreateListScreen', {
       listId: String(Date.now()),
       listName: listName.trim(),
+      startDate: startDate.toISOString(),
+      sourceId: selectedSourceId ?? undefined,
     });
-  }, [listName, navigation]);
+  }, [listName, startDate, selectedSourceId, navigation]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -198,96 +295,122 @@ const NewListScreen: React.FC = () => {
             />
           </View>
 
-          {/* ════ SECTION 2 — TAAREEKH ════ */}
+          {/* ════ SECTION 2 — SHURU KI TAAREEKH ════ */}
           <View style={styles.section}>
-            <SectionLabel icon="calendar-outline" en="DATE" hi="तारीख" />
+            <SectionLabel
+              icon="calendar-outline"
+              en="START DATE"
+              hi="शुरू की तारीख"
+            />
 
-            <View style={styles.dateRow}>
-              {/* Shuru */}
-              <View style={styles.dateField}>
-                <Text style={styles.fieldLabel}>
-                  From <Text style={styles.fieldLabelEn}>/ Shuru</Text>
-                </Text>
-                <TouchableOpacity style={styles.dateBox} activeOpacity={0.75}>
-                  <Icon
-                    name="calendar-start"
-                    size={14}
-                    color={colors.primary}
-                    style={styles.dateIcon}
-                  />
-                  <Text style={styles.dateText}>{from}</Text>
-                </TouchableOpacity>
-              </View>
+            <TouchableOpacity
+              style={styles.dateBox}
+              activeOpacity={0.75}
+              onPress={() => setShowPicker(true)}
+            >
+              <Icon
+                name="calendar-start"
+                size={16}
+                color={colors.primary}
+                style={styles.dateIcon}
+              />
+              <Text style={styles.dateText}>{formatDate(startDate)}</Text>
+
+              {isToday(startDate) && (
+                <View style={styles.todayTag}>
+                  <Text style={styles.todayTagText}>Today / आज</Text>
+                </View>
+              )}
 
               <Icon
-                name="arrow-right"
-                size={16}
+                name="chevron-down"
+                size={18}
                 color={colors.textMuted}
-                style={styles.dateArrow}
+                style={styles.dateChevron}
               />
+            </TouchableOpacity>
 
-              {/* Khatam */}
-              <View style={styles.dateField}>
-                <Text style={styles.fieldLabel}>
-                  To <Text style={styles.fieldLabelEn}>/ Khatam</Text>
-                </Text>
-                <TouchableOpacity style={styles.dateBox} activeOpacity={0.75}>
-                  <Icon
-                    name="calendar-end"
-                    size={14}
-                    color={colors.primary}
-                    style={styles.dateIcon}
-                  />
-                  <Text style={styles.dateText}>{to}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            {showPicker && (
+              <DateTimePicker
+    value={startDate}
+    mode="date"
+    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+    onValueChange={handleDateValueChange}
+    onDismiss={handleDateDismiss}
+    themeVariant={isDark ? 'dark' : 'light'}
+    accentColor={colors.primary}
+  />
+            )}
           </View>
 
           {/* ════ SECTION 3 — TEMPLATE ════ */}
           <View style={styles.section}>
             <SectionLabel icon="content-copy" en="USE TEMPLATE" hi="टेम्पलेट" />
 
-            <TouchableOpacity
-              onPress={() => setUseTemplate(p => !p)}
-              activeOpacity={0.8}
-              style={[
-                styles.templateCard,
-                {
-                  backgroundColor: useTemplate
-                    ? colors.primaryMuted
-                    : colors.cardBgVariant,
-                  borderColor: useTemplate ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <View style={styles.templateInfo}>
-                <Text style={styles.templateName}>{LAST_LIST.name}</Text>
-                <Text style={styles.templateMeta}>
-                  {LAST_LIST.itemCount} items • {LAST_LIST.label}
-                </Text>
+            <SegmentedTabs
+              tabs={SOURCE_TABS}
+              selectedId={sourceTab}
+              onSelect={handleSourceTabChange}
+              containerStyle={styles.tabs}
+            />
+
+            {sourceItems.length === 0 ? (
+              <Text style={styles.emptyText}>{EMPTY_TEXT[sourceTab]}</Text>
+            ) : (
+              <View style={styles.sourceList}>
+                {sourceItems.map(item => {
+                  const selected = selectedSourceId === item.id;
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      onPress={() => handleToggleSource(item.id)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.templateCard,
+                        {
+                          backgroundColor: selected
+                            ? colors.primaryMuted
+                            : colors.cardBgVariant,
+                          borderColor: selected
+                            ? colors.primary
+                            : colors.border,
+                        },
+                      ]}
+                    >
+                      <View style={styles.templateInfo}>
+                        <Text style={styles.templateName}>{item.name}</Text>
+                        <Text style={styles.templateMeta}>
+                          {item.itemCount} items • {item.meta}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.useBtn,
+                          {
+                            backgroundColor: selected
+                              ? colors.primary
+                              : 'transparent',
+                            borderColor: selected
+                              ? colors.primary
+                              : colors.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.useBtnText,
+                            { color: selected ? onPrimary : colors.textMuted },
+                          ]}
+                        >
+                          {selected ? 'Used ✓' : 'Use'}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              <View
-                style={[
-                  styles.useBtn,
-                  {
-                    backgroundColor: useTemplate
-                      ? colors.primary
-                      : 'transparent',
-                    borderColor: useTemplate ? colors.primary : colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.useBtnText,
-                    { color: useTemplate ? onPrimary : colors.textMuted },
-                  ]}
-                >
-                  {useTemplate ? 'Used ✓' : 'Use'}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.bottomSpacer} />
@@ -380,32 +503,47 @@ const createStyles = (theme: Theme) => {
       color: colors.textPrimary,
     },
 
-    // ── Date row ──
-    dateRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: spacing.sm,
-    },
-    dateField: { flex: 1 },
-    dateArrow: { marginBottom: spacing.md },
+    // ── Start date ──
     dateBox: {
-      height: 44,
+      height: 48,
       backgroundColor: inputBg,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: borderRadius.md - 2,
+      borderRadius: borderRadius.md,
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: spacing.sm + 2,
+      paddingHorizontal: spacing.md,
     },
-    dateIcon: { marginRight: 6 },
+    dateIcon: { marginRight: spacing.sm },
     dateText: {
-      fontSize: typography.xs + 1,
+      fontSize: typography.sm,
       fontFamily: fontFamilies.medium,
       color: colors.textPrimary,
     },
+    todayTag: {
+      marginLeft: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: borderRadius.full,
+      backgroundColor: colors.primaryMuted,
+    },
+    todayTagText: {
+      fontSize: typography.xs - 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.primary,
+    },
+    dateChevron: { marginLeft: 'auto' },
 
-    // ── Template card ──
+    // ── Template section ──
+    tabs: { marginBottom: spacing.md },
+    sourceList: { gap: spacing.sm },
+    emptyText: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+      textAlign: 'center',
+      paddingVertical: spacing.lg,
+    },
     templateCard: {
       flexDirection: 'row',
       alignItems: 'center',
