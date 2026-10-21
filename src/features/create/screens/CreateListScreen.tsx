@@ -10,23 +10,17 @@ import React, {
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   FlatList,
   StyleSheet,
-  Platform,
   Alert,
-  Image,
-  Dimensions,
-  ScrollView,
-  Modal,
-  KeyboardAvoidingView,
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
@@ -37,8 +31,10 @@ import ProductCard, {
   CARD_GAP,
   GRID_H_PADDING,
 } from '../../../shared/components/product/ProductCard';
+import QuantityStepper from '../../../shared/components/product/QuantityStepper';
+import ListSheet, { SheetView } from '../../list/components/ListSheet';
 import { CATEGORIES, PRODUCTS } from '../../../Data/DummyData';
-import { Product } from '../../../Data/types';
+import { Product, SelectedProduct } from '../../../Data/types';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -50,209 +46,17 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
-const BOTTOM_BAR_H = 78;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface SelectedP extends Product {
-  quantity: number;
-  note?: string;
-}
 
 // ═══════════════════════════════════════════════════════════════════
-// STYLES (theme se) — saare sub-components ke liye ek jagah
+// STYLES (theme se) — screen ke sub-components ke liye ek jagah
 // ═══════════════════════════════════════════════════════════════════
 const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
     theme;
 
   const onPrimary = colors.onPrimary; // primary ke upar ka text/icon
-  const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
 
   return {
-
-    // ── Quantity stepper ──
-    qs: StyleSheet.create({
-      row: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-      btn: {
-        width: 26,
-        height: 26,
-        borderRadius: 7,
-        borderWidth: 1.5,
-        borderColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      btnFilled: { backgroundColor: colors.primary },
-      count: {
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-        minWidth: 18,
-        textAlign: 'center',
-      },
-    }),
-
-    // ── Edit note modal ──
-    em: StyleSheet.create({
-      overlay: { flex: 1, justifyContent: 'flex-end' },
-      backdrop: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: colors.overlay,
-      },
-      sheet: {
-        backgroundColor: colors.cardBg,
-        borderTopLeftRadius: borderRadius.xl,
-        borderTopRightRadius: borderRadius.xl,
-        padding: spacing.xl,
-        paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xxl,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-      },
-      handle: {
-        width: 36,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: colors.border,
-        alignSelf: 'center',
-        marginBottom: spacing.md + 2,
-      },
-      headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md + 2,
-      },
-      headerTitle: {
-        fontSize: typography.md,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-      },
-      productRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        marginBottom: spacing.xl,
-        padding: spacing.md,
-        backgroundColor: colors.cardBgVariant,
-        borderRadius: borderRadius.md,
-      },
-      thumb: {
-        width: 52,
-        height: 52,
-        borderRadius: borderRadius.md - 2,
-        backgroundColor: colors.appBackground,
-      },
-      pName: {
-        fontSize: typography.sm + 1,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-      },
-      pHindi: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.regular,
-        color: colors.textMuted,
-        marginTop: 2,
-      },
-      label: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.semiBold,
-        color: colors.textMuted,
-        letterSpacing: 0.5,
-      },
-      qtyRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.sm + 2,
-        marginTop: spacing.sm,
-        marginBottom: spacing.xl,
-      },
-      qBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: borderRadius.md - 2,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      qBtnMinus: { backgroundColor: colors.cardBgVariant },
-      qBtnPlus: { backgroundColor: colors.primary },
-      qCount: {
-        fontSize: typography.xl,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-        minWidth: 32,
-        textAlign: 'center',
-      },
-      unitTag: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.regular,
-        color: colors.textMuted,
-        marginLeft: spacing.xs,
-      },
-      noteHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: spacing.sm,
-      },
-      charCount: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.regular,
-        color: colors.textMuted,
-      },
-      noteInput: {
-        backgroundColor: colors.cardBgVariant,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: borderRadius.md - 2,
-        padding: spacing.md,
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.regular,
-        color: colors.textPrimary,
-        marginBottom: spacing.lg + 2,
-        minHeight: 64,
-        textAlignVertical: 'top',
-      },
-      actionsRow: { flexDirection: 'row', gap: spacing.sm + 2 },
-      removeBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
-        paddingHorizontal: spacing.lg,
-        borderRadius: borderRadius.md,
-        borderWidth: 1.5,
-        borderColor: colors.error,
-      },
-      removeTxt: {
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.bold,
-        color: colors.error,
-      },
-      saveBtn: {
-        flex: 1,
-        height: 50,
-        backgroundColor: colors.primary,
-        borderRadius: borderRadius.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      saveTxt: {
-        fontSize: typography.sm + 1,
-        fontFamily: fontFamilies.bold,
-        color: onPrimary,
-      },
-      btnIcon: { marginRight: 6 },
-    }),
-
-    // ── Product card ──
-    // borderWidth hamesha 1.5; select hone par sirf color badalta hai, taaki
-    // grid reflow na ho.
     // ── Product card footer (shared ProductCard ke andar jaata hai) ──
     pc: StyleSheet.create({
       bottomRow: {
@@ -289,88 +93,16 @@ const createStyles = (theme: Theme) => {
         justifyContent: 'center',
       },
     }),
-    // ── List preview modal ──
-    pm: StyleSheet.create({
-      overlay: { flex: 1, justifyContent: 'flex-end' },
-      backdrop: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: colors.overlay,
-      },
-      sheet: {
-        backgroundColor: colors.cardBg,
-        borderTopLeftRadius: borderRadius.xl,
-        borderTopRightRadius: borderRadius.xl,
-        padding: spacing.xl,
-        paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xxl,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-      },
-      headerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md + 2,
-      },
-      title: {
-        fontSize: typography.md,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-      },
-      emptyTxt: {
-        color: colors.textMuted,
-        fontFamily: fontFamilies.regular,
-        textAlign: 'center',
-        paddingVertical: spacing.xxxl,
-      },
-      row: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
-        paddingVertical: spacing.sm + 2,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: colors.border,
-      },
-      thumb: {
-        width: 44,
-        height: 44,
-        borderRadius: borderRadius.sm,
-        backgroundColor: colors.appBackground,
-      },
-      rowName: {
-        fontSize: typography.sm,
-        fontFamily: fontFamilies.bold,
-        color: colors.textPrimary,
-      },
-      rowSub: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.regular,
-        color: colors.textMuted,
-        marginTop: 1,
-      },
-      rowNote: {
-        fontSize: typography.xs,
-        fontFamily: fontFamilies.regular,
-        color: colors.textMuted,
-        marginTop: 2,
-      },
-    }),
 
     // ── Bottom action bar ──
+    // Absolute nahi: list ke neeche normal sibling. Bottom safe-area ka dhyan
+    // SafeAreaView (edges 'bottom') rakhta hai, isliye extra padding nahi.
     ab: StyleSheet.create({
       wrap: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: H_PADDING,
-        paddingTop: spacing.xs + 2,
-        paddingBottom: Platform.OS === 'ios' ? 28 : spacing.xs + 2,
+        paddingVertical: spacing.xs + 2,
         backgroundColor: colors.appBackground,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
@@ -408,12 +140,13 @@ const createStyles = (theme: Theme) => {
       root: { flex: 1, backgroundColor: colors.appBackground },
       safeArea: { flex: 1, backgroundColor: colors.appBackground },
       body: { flex: 1 },
+
       gridContent: { paddingHorizontal: GRID_H_PADDING, gap: CARD_GAP },
     }),
   };
 };
 
-// Theme ke hisaab se styles cache — har card/component apni stylesheet dobara
+// Theme ke hisaab se styles cache — har component apni stylesheet dobara
 // nahi banata. Theme badalne par (toggle) naya set ban jata hai.
 const stylesCache = new WeakMap<Theme, ReturnType<typeof createStyles>>();
 const useStyles = () => {
@@ -430,190 +163,6 @@ const useStyles = () => {
 // SUB-COMPONENTS
 // ═══════════════════════════════════════════════════════════════════
 
-// ─── Category Chips ───────────────────────────────────────────────
-// flexShrink:0 (ScrollView + chip) aur numberOfLines={1}: chips compress nahi
-// hote chahe neeche grid kitna bhi bada ho.
-
-// ─── Quantity Stepper ─────────────────────────────────────────────
-const QuantityStepper = React.memo(
-  ({
-    quantity,
-    onIncrease,
-    onDecrease,
-  }: {
-    quantity: number;
-    onIncrease: () => void;
-    onDecrease: () => void;
-  }) => {
-    const { theme, qs } = useStyles();
-    const { colors } = theme;
-
-    return (
-      <View style={qs.row}>
-        <TouchableOpacity
-          onPress={onDecrease}
-          style={qs.btn}
-          activeOpacity={0.75}
-        >
-          <Icon name="minus" size={13} color={colors.primary} />
-        </TouchableOpacity>
-        <Text style={qs.count}>{quantity}</Text>
-        <TouchableOpacity
-          onPress={onIncrease}
-          style={[qs.btn, qs.btnFilled]}
-          activeOpacity={0.75}
-        >
-          <Icon name="plus" size={13} color={colors.onPrimary} />
-        </TouchableOpacity>
-      </View>
-    );
-  },
-);
-
-// ─── Edit Note Modal ──────────────────────────────────────────────
-const EditNoteModal = React.memo(
-  ({
-    visible,
-    product,
-    quantity,
-    note,
-    onClose,
-    onSave,
-    onRemove,
-  }: {
-    visible: boolean;
-    product: SelectedP | null;
-    quantity: number;
-    note: string;
-    onClose: () => void;
-    onSave: (qty: number, note: string) => void;
-    onRemove: () => void;
-  }) => {
-    const { theme, em } = useStyles();
-    const { colors } = theme;
-
-    const [qty, setQty] = useState(quantity);
-    const [ntxt, setNtxt] = useState(note);
-
-    // naya product edit hone par local state sync
-    useEffect(() => {
-      setQty(quantity);
-      setNtxt(note);
-    }, [product?.id, quantity, note]);
-
-    if (!product) return null;
-
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={onClose}
-      >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={em.overlay}
-        >
-          <TouchableOpacity
-            style={em.backdrop}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-          <View style={em.sheet}>
-            <View style={em.handle} />
-
-            <View style={em.headerRow}>
-              <Text style={em.headerTitle}>Edit Item</Text>
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Icon name="close" size={22} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Product info */}
-            <View style={em.productRow}>
-              <Image source={{ uri: product.imageUrl }} style={em.thumb} />
-              <View style={{ flex: 1 }}>
-                <Text style={em.pName}>{product.name}</Text>
-                <Text style={em.pHindi}>
-                  {product.nameHindi} • {product.unit}
-                </Text>
-              </View>
-            </View>
-
-            {/* Quantity */}
-            <Text style={em.label}>Quantity / मात्रा</Text>
-            <View style={em.qtyRow}>
-              <TouchableOpacity
-                onPress={() => setQty(q => Math.max(1, q - 1))}
-                style={[em.qBtn, em.qBtnMinus]}
-              >
-                <Icon name="minus" size={16} color={colors.textPrimary} />
-              </TouchableOpacity>
-              <Text style={em.qCount}>{qty}</Text>
-              <TouchableOpacity
-                onPress={() => setQty(q => q + 1)}
-                style={[em.qBtn, em.qBtnPlus]}
-              >
-                <Icon name="plus" size={16} color={colors.onPrimary} />
-              </TouchableOpacity>
-              <Text style={em.unitTag}>{product.unit} each</Text>
-            </View>
-
-            {/* Note */}
-            <View style={em.noteHeaderRow}>
-              <Text style={em.label}>Note / टिप्पणी</Text>
-              <Text style={em.charCount}>{ntxt.length}/120</Text>
-            </View>
-            <TextInput
-              value={ntxt}
-              onChangeText={t => setNtxt(t.slice(0, 120))}
-              placeholder="e.g. Patanjali brand lena..."
-              placeholderTextColor={colors.textMuted}
-              style={em.noteInput}
-              multiline
-              numberOfLines={2}
-            />
-
-            {/* Actions */}
-            <View style={em.actionsRow}>
-              <TouchableOpacity
-                onPress={onRemove}
-                activeOpacity={0.85}
-                style={em.removeBtn}
-              >
-                <Icon
-                  name="trash-can-outline"
-                  size={16}
-                  color={colors.error}
-                  style={em.btnIcon}
-                />
-                <Text style={em.removeTxt}>Remove</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => onSave(qty, ntxt)}
-                activeOpacity={0.85}
-                style={em.saveBtn}
-              >
-                <Icon
-                  name="check-circle-outline"
-                  size={18}
-                  color={colors.onPrimary}
-                  style={em.btnIcon}
-                />
-                <Text style={em.saveTxt}>Done / हो गया</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    );
-  },
-);
-
-// ─── Product Card ─────────────────────────────────────────────────
 // ─── Product Card (shared ProductCard + select/stepper footer) ────
 const SelectableProductCard = React.memo(
   ({
@@ -688,99 +237,6 @@ const SelectableProductCard = React.memo(
   },
 );
 
-// ─── List Preview Modal (header ke receipt icon se khulta hai) ────
-const ListPreviewModal = React.memo(
-  ({
-    visible,
-    items,
-    onClose,
-    onEdit,
-  }: {
-    visible: boolean;
-    items: SelectedP[];
-    onClose: () => void;
-    onEdit: (id: string) => void;
-  }) => {
-    const { theme, pm, em } = useStyles();
-    const { colors } = theme;
-
-    return (
-      <Modal
-        visible={visible}
-        transparent
-        animationType="slide"
-        onRequestClose={onClose}
-      >
-        <View style={pm.overlay}>
-          <TouchableOpacity
-            style={pm.backdrop}
-            activeOpacity={1}
-            onPress={onClose}
-          />
-          <View style={pm.sheet}>
-            <View style={em.handle} />
-            <View style={pm.headerRow}>
-              <Text style={pm.title}>List Preview ({items.length})</Text>
-              <TouchableOpacity
-                onPress={onClose}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Icon name="close" size={22} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-
-            {items.length === 0 ? (
-              <Text style={pm.emptyTxt}>Abhi koi item select nahi hua</Text>
-            ) : (
-              <ScrollView
-                style={{ maxHeight: 420 }}
-                showsVerticalScrollIndicator={false}
-              >
-                {items.map(item => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={pm.row}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      onClose();
-                      onEdit(item.id);
-                    }}
-                  >
-                    <Image source={{ uri: item.imageUrl }} style={pm.thumb} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={pm.rowName} numberOfLines={1}>
-                        {item.name}
-                      </Text>
-                      <Text style={pm.rowSub}>
-                        {item.unit} · Qty {item.quantity}
-                      </Text>
-                      {!!item.note && (
-                        <Text style={pm.rowNote} numberOfLines={1}>
-                          <Icon
-                            name="note-text-outline"
-                            size={11}
-                            color={colors.textMuted}
-                          />{' '}
-                          {item.note}
-                        </Text>
-                      )}
-                    </View>
-                    <Icon
-                      name="pencil-outline"
-                      size={16}
-                      color={colors.primary}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
-    );
-  },
-);
-
 // ═══════════════════════════════════════════════════════════════════
 // BOTTOM ACTION BAR — Save (circle) · Continue (pill) · Share (circle)
 // ═══════════════════════════════════════════════════════════════════
@@ -847,17 +303,21 @@ const CreateListScreen: React.FC = () => {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavProp>();
   const { s } = useStyles();
-  // const { colors } = theme;
 
   const listName = route.params?.listName ?? 'Nayi List';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProducts, setSelectedProducts] = useState<
-    Record<string, SelectedP>
+    Record<string, SelectedProduct>
   >({});
+
+  // ── Bottom sheet (preview + edit, ek hi sheet) ──
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [sheetView, setSheetView] = useState<SheetView>('preview');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
+  // Edit preview se khola gaya? (to Done / Remove ke baad preview par wapas)
+  const [editFromPreview, setEditFromPreview] = useState(false);
 
   const selectedCount = Object.keys(selectedProducts).length;
 
@@ -875,7 +335,7 @@ const CreateListScreen: React.FC = () => {
         'List save nahi hui',
         'Aap is list ko chhod ke jaana chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => { } },
+          { text: 'Cancel', style: 'cancel', onPress: () => {} },
           {
             text: 'Discard',
             style: 'destructive',
@@ -906,7 +366,7 @@ const CreateListScreen: React.FC = () => {
     });
   }, [selectedCategory, searchQuery]);
 
-  // ── Handlers ──
+  // ── Selection handlers ──
   const handleAdd = useCallback((id: string) => {
     const product = PRODUCTS.find(p => p.id === id);
     if (!product) return;
@@ -945,7 +405,44 @@ const CreateListScreen: React.FC = () => {
     });
   }, []);
 
-  const handleEdit = useCallback((id: string) => setEditingId(id), []);
+  // ── Sheet handlers ──
+  const openPreview = useCallback(() => {
+    setSheetView('preview');
+    setSheetVisible(true);
+  }, []);
+
+  // card ke pencil se: seedha edit, Done ke baad sheet band
+  const openEditFromCard = useCallback((id: string) => {
+    setEditingId(id);
+    setEditFromPreview(false);
+    setSheetView('edit');
+    setSheetVisible(true);
+  }, []);
+
+  // preview ke pencil se: usi sheet me edit view, Done ke baad preview
+  const openEditFromPreview = useCallback((id: string) => {
+    setEditingId(id);
+    setEditFromPreview(true);
+    setSheetView('edit');
+  }, []);
+
+  const closeSheet = useCallback(() => setSheetVisible(false), []);
+  const backToPreview = useCallback(() => setSheetView('preview'), []);
+
+  // close animation poori hone ke baad safai
+  const handleSheetDismissed = useCallback(() => {
+    setEditingId(null);
+    setSheetView('preview');
+  }, []);
+
+  // Done / Remove ke baad: preview se aaye the to wapas preview, warna band
+  const finishEdit = useCallback(() => {
+    if (editFromPreview) {
+      setSheetView('preview');
+    } else {
+      setSheetVisible(false);
+    }
+  }, [editFromPreview]);
 
   const handleEditSave = useCallback(
     (qty: number, note: string) => {
@@ -958,18 +455,19 @@ const CreateListScreen: React.FC = () => {
           note: note.trim() || undefined,
         },
       }));
-      setEditingId(null);
+      finishEdit();
     },
-    [editingId],
+    [editingId, finishEdit],
   );
 
   const handleEditRemove = useCallback(() => {
     if (!editingId) return;
     handleRemove(editingId);
-    setEditingId(null);
-  }, [editingId, handleRemove]);
+    finishEdit();
+  }, [editingId, handleRemove, finishEdit]);
 
-  // bottom-bar Save — navigate nahi karta
+  // ── Bottom bar handlers ──
+  // Save — navigate nahi karta
   const handleSaveDraft = useCallback(() => {
     // TODO: AsyncStorage / backend me persist karo
     savedSnapshotRef.current = JSON.stringify(selectedProducts);
@@ -1005,6 +503,8 @@ const CreateListScreen: React.FC = () => {
     [selectedProducts],
   );
 
+  const editingProduct = editingId ? selectedProducts[editingId] ?? null : null;
+
   // ── Render item ──
   const renderItem = useCallback(
     ({ item }: { item: Product }) => (
@@ -1016,7 +516,7 @@ const CreateListScreen: React.FC = () => {
         onAdd={handleAdd}
         onIncrease={handleIncrease}
         onDecrease={handleDecrease}
-        onEdit={handleEdit}
+        onEdit={openEditFromCard}
         onRemove={handleRemove}
       />
     ),
@@ -1025,14 +525,12 @@ const CreateListScreen: React.FC = () => {
       handleAdd,
       handleIncrease,
       handleDecrease,
-      handleEdit,
+      openEditFromCard,
       handleRemove,
     ],
   );
 
   const keyExtractor = useCallback((item: Product) => item.id, []);
-
-  const editingProduct = editingId ? selectedProducts[editingId] : null;
 
   // ═══ collapsible search + chips bar ═══
   const { barHeight, barTranslateY, onBarLayout, handleScroll } =
@@ -1048,7 +546,7 @@ const CreateListScreen: React.FC = () => {
           leftAction="back"
           rightIcon="receipt-outline"
           rightIconSet="ionicons"
-          onRightPress={() => setPreviewVisible(true)}
+          onRightPress={openPreview}
           rightBadge={selectedCount}
           showThemeToggle={false}
         />
@@ -1075,7 +573,7 @@ const CreateListScreen: React.FC = () => {
             columnWrapperStyle={{ gap: CARD_GAP }}
             contentContainerStyle={[
               s.gridContent,
-              { paddingTop: barHeight, paddingBottom: BOTTOM_BAR_H + 24 },
+              { paddingTop: barHeight, paddingBottom: 24 },
             ]}
             onScroll={handleScroll}
             scrollEventThrottle={16}
@@ -1102,21 +600,19 @@ const CreateListScreen: React.FC = () => {
           continueDisabled={selectedCount === 0}
         />
 
-        {/* ── List Preview Modal ── */}
-        <ListPreviewModal
-          visible={previewVisible}
+        {/* ── List Preview + Edit (ek hi sheet) ── */}
+        <ListSheet
+          visible={sheetVisible}
+          view={sheetView}
           items={selectedList}
-          onClose={() => setPreviewVisible(false)}
-          onEdit={handleEdit}
-        />
-
-        {/* ── Edit Modal ── */}
-        <EditNoteModal
-          visible={!!editingProduct}
-          product={editingProduct ?? null}
-          quantity={editingProduct?.quantity ?? 1}
-          note={editingProduct?.note ?? ''}
-          onClose={() => setEditingId(null)}
+          editingItem={editingProduct}
+          canGoBack={editFromPreview}
+          onClose={closeSheet}
+          onDismissed={handleSheetDismissed}
+          onIncrease={handleIncrease}
+          onDecrease={handleDecrease}
+          onOpenEdit={openEditFromPreview}
+          onBack={backToPreview}
           onSave={handleEditSave}
           onRemove={handleEditRemove}
         />

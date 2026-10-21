@@ -14,6 +14,9 @@ interface EmptyStateProps {
   icon?: string;
   title: string;
   subtitle?: string;
+  /** Chhoti jagah (sheet / card) ke liye kam padding */
+  compact?: boolean;
+
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({
