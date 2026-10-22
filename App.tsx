@@ -50,6 +50,8 @@ import { StatusBar } from 'react-native';
 
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/app/providers/ThemeProvider';
+import { Provider } from 'react-redux';
+import { store } from './src/app/store/store';
 
 const AppContent = () => {
   const { theme, isDark } = useTheme();
@@ -83,12 +85,13 @@ const AppContent = () => {
 
 export default function App() {
   return (
+    <Provider store={store}>
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
           <AppContent />
         </ThemeProvider>
       </SafeAreaProvider>
-    </GestureHandlerRootView>
+    </GestureHandlerRootView></Provider>
   );
 }
