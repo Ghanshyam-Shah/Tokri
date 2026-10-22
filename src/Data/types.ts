@@ -53,6 +53,12 @@ export interface ListSummary {
   preview: string;
 }
 
+/** CreateListScreen me chuna hua product (qty + note ke saath) */
+export interface SelectedProduct extends Product {
+  quantity: number;
+  note?: string;
+}
+
 /** Saved Lists screen */
 export interface SavedList extends ListSummary {
   category: ListCategory;
@@ -93,4 +99,11 @@ export interface ListSource {
   name: string;
   itemCount: number;
   meta: string;
+}
+
+// Old list / template ke andar ke items (id se product dhundhte hain)
+export interface SourceItem {
+  productId: string;
+  quantity: number;
+  note?: string;
 }

@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import AppHeader from '../../../shared/components/headers/AppHeader';
@@ -17,11 +19,14 @@ import EmptyState from '../../../shared/components/states/EmptyState';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { HISTORY_SECTIONS } from '../../../Data/DummyData';
 import { HistoryItem, HistorySection } from '../../../Data/types';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
+type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
 // ─── Main Component ───────────────────────────────────────────────────────
 const HistoryScreen = () => {
+    const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -42,9 +47,12 @@ const HistoryScreen = () => {
     })).filter(section => section.data.length > 0);
   }, [searchQuery]);
 
-  const handleReuse = (item: HistoryItem) => {
-    // TODO: create list screen pe navigate karo / nayi list populate karo
-    console.log('Reusing list:', item.name);
+    const handleReuse = (item: HistoryItem) => {
+    navigation.navigate('CreateListScreen', {
+      listName: item.name,
+      startDate: new Date().toISOString(),
+      sourceId: item.id,
+    });
   };
 
   const renderHistoryCard = ({ item }: { item: HistoryItem }) => (

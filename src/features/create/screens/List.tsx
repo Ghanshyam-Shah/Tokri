@@ -44,7 +44,7 @@ import { lightColors } from '../../../theme/colors';
 // screen Save-as-Image / Save-as-PDF ke bina chalegi.
 import ViewShot from 'react-native-view-shot';
 import { generatePDF } from 'react-native-html-to-pdf';
-import { AppStackParamList } from '../../../navigation/types/navigationTypes';
+import { AppStackParamList, ListItemParam, } from '../../../navigation/types/navigationTypes';
 
 type RouteProps = RouteProp<AppStackParamList, 'List'>;
 type Theme = ReturnType<typeof useTheme>['theme'];
@@ -53,17 +53,8 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 const H_PADDING = 16;
 const BOTTOM_BAR_H = 92;
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface SelectedP {
-  id: string;
-  name: string;
-  nameHindi: string;
-  unit: string;
-  imageUrl: string;
-  quantity: number;
-  note?: string;
-  categoryId?: string; // category chips filter ke liye
-}
+// Route se aane wale items ka hi type (imageUrl optional)
+type SelectedP = ListItemParam;
 
 // ─── Categories (CreateListScreen jaisi) ──────────────────────────────────────
 interface Category {
@@ -595,7 +586,18 @@ const ListRow = React.memo(
       <View style={row.card}>
         <View style={row.topRow}>
           <View style={row.thumbWrap}>
-            <Image source={{ uri: item.imageUrl }} style={row.thumb} />
+            {item.imageUrl ? (
+              <Image source={{ uri: item.imageUrl }} style={row.thumb} />
+            ) : (
+              <View
+                style={[
+                  row.thumb,
+                  { alignItems: 'center', justifyContent: 'center' },
+                ]}
+              >
+                <Icon name="image-outline" size={22} color={colors.textMuted} />
+              </View>
+            )}
             {!!item.note && (
               <View style={row.noteBadge}>
                 <Icon
@@ -705,7 +707,18 @@ const EditItemModal = React.memo(
             </View>
 
             <View style={em.productRow}>
-              <Image source={{ uri: item.imageUrl }} style={em.thumb} />
+              {item.imageUrl ? (
+                <Image source={{ uri: item.imageUrl }} style={em.thumb} />
+              ) : (
+                <View
+                  style={[
+                    em.thumb,
+                    { alignItems: 'center', justifyContent: 'center' },
+                  ]}
+                >
+                  <Icon name="image-outline" size={22} color={colors.textMuted} />
+                </View>
+              )}
               <View style={{ flex: 1 }}>
                 <Text style={em.pName}>{item.name}</Text>
                 <Text style={em.pHindi}>
@@ -949,9 +962,8 @@ const List: React.FC = () => {
   const buildPlainText = useCallback(() => {
     const lines = itemList.map((it, idx) => {
       const notePart = it.note ? `  (${it.note})` : '';
-      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${
-        it.unit
-      }${notePart}`;
+      return `${idx + 1}. ${it.name} / ${it.nameHindi} — ${it.quantity} × ${it.unit
+        }${notePart}`;
     });
     return `🛒 ${listName}\n\n${lines.join('\n')}\n\nTotal items: ${itemCount}`;
   }, [itemList, listName, itemCount]);
@@ -986,11 +998,11 @@ const List: React.FC = () => {
     try {
       // PDF ek document hai (UI nahi), isliye uske colors theme se nahi aate
       const pdfCell = `padding:8px;border-bottom:1px solid ${lightColors.border};`;
-const pdfHead = `padding:8px;text-align:left;`;
+      const pdfHead = `padding:8px;text-align:left;`;
 
-const rowsHtml = itemList
-  .map(
-    (it, idx) => `
+      const rowsHtml = itemList
+        .map(
+          (it, idx) => `
   <tr>
     <td style="${pdfCell}">${idx + 1}</td>
     <td style="${pdfCell}">${it.name} (${it.nameHindi})</td>
@@ -998,10 +1010,10 @@ const rowsHtml = itemList
     <td style="${pdfCell}">${it.quantity}</td>
     <td style="${pdfCell}">${it.note ?? ''}</td>
   </tr>`,
-  )
-  .join('');
+        )
+        .join('');
 
-const html = `
+      const html = `
   <html><body style="font-family:sans-serif;padding:16px;color:${lightColors.textPrimary};">
     <h2>${listName}</h2>
     <table style="width:100%;border-collapse:collapse;">

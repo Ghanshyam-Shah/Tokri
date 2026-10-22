@@ -33,8 +33,8 @@ import ProductCard, {
 } from '../../../shared/components/product/ProductCard';
 import QuantityStepper from '../../../shared/components/product/QuantityStepper';
 import ListSheet, { SheetView } from '../../list/components/ListSheet';
-import { CATEGORIES, PRODUCTS } from '../../../Data/DummyData';
 import { Product, SelectedProduct } from '../../../Data/types';
+import { CATEGORIES, PRODUCTS, buildSelectedFromSource } from '../../../Data/DummyData';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -308,9 +308,12 @@ const CreateListScreen: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // Old List / Template / History se aaye to items pehle se bhare honge.
+  // useState ka lazy initializer sirf pehle render par chalta hai.
   const [selectedProducts, setSelectedProducts] = useState<
     Record<string, SelectedProduct>
-  >({});
+  >(() => buildSelectedFromSource(route.params?.sourceId));
 
   // ── Bottom sheet (preview + edit, ek hi sheet) ──
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -322,9 +325,9 @@ const CreateListScreen: React.FC = () => {
   const selectedCount = Object.keys(selectedProducts).length;
 
   // last SAVED state vs current — back dabane par unsaved changes check
-  const savedSnapshotRef = useRef<string>(JSON.stringify({}));
-
-  // back (header button, gesture, hardware) — stack me beforeRemove sabke liye fire hota hai
+  // Pre-filled items hi "saved" baseline hain, isliye jab tak user kuch na badle
+  // "List save nahi hui" alert nahi aayega.
+  const savedSnapshotRef = useRef<string>(JSON.stringify(selectedProducts));  // back (header button, gesture, hardware) — stack me beforeRemove sabke liye fire hota hai
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
       const hasChanges =
@@ -335,7 +338,7 @@ const CreateListScreen: React.FC = () => {
         'List save nahi hui',
         'Aap is list ko chhod ke jaana chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => {} },
+          { text: 'Cancel', style: 'cancel', onPress: () => { } },
           {
             text: 'Discard',
             style: 'destructive',
