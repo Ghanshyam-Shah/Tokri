@@ -1,26 +1,27 @@
+// src/navigation/AuthNavigator.tsx
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import SplashScreen from '../features/auth/screens/SplashScreen';
+import { AuthStackParamList } from './types/navigationTypes';
 import LoginScreen from '../features/auth/screens/LoginScreen';
 import RegisterScreen from '../features/auth/screens/RegisterScreen';
-import PhoneOTPScreen from '../features/auth/screens/PhoneOTPScreen';
-import { AuthStackParamList } from './types/navigationTypes';
+import ForgotPasswordScreen from '../features/auth/screens/ForgotPasswordScreen';
+import OtpScreen from '../features/auth/screens/OtpScreen';
+import ResetPasswordScreen from '../features/auth/screens/ResetPasswordScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
-const AuthNavigator = () => {
-  return (
-    <Stack.Navigator
-      initialRouteName="Splash"
-      screenOptions={{ headerShown: false }}
-    >
-      <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="PhoneOTP" component={PhoneOTPScreen} />
-    </Stack.Navigator>
-  );
-};
+const AuthNavigator = () => (
+  <Stack.Navigator
+    initialRouteName="Login"
+    screenOptions={{ headerShown: false }}
+  >
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+    <Stack.Screen name="Otp" component={OtpScreen} />
+    <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+  </Stack.Navigator>
+);
 
 export default AuthNavigator;

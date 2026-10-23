@@ -107,3 +107,13 @@ export interface SourceItem {
   quantity: number;
   note?: string;
 }
+
+// Home ke "Active lists" cards
+export interface ActiveList {
+  id: string;
+  name: string;
+  bought: number;
+  total: number;
+  due: string;
+  sourceId: string; // tap par is list ke items khulte hain (SOURCE_ITEMS ki key)
+}

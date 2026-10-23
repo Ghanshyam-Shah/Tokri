@@ -15,27 +15,31 @@ import Help from '../features/other/help/screens/Help';
 import About from '../features/other/about/screens/About';
 import { DrawerParamList } from './types/navigationTypes';
 import { useTheme } from '../app/providers/ThemeProvider';
+import { useAppDispatch, useAppSelector } from '../app/store/hooks';
+import { signOut } from '../features/auth/store/authSlice';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
-type Theme = ReturnType<typeof useTheme>['theme'];
 
+type Theme = ReturnType<typeof useTheme>['theme'];
 // ─── Custom drawer content ────────────────────────────────────────────────────
 const CustomDrawerContent = (props: DrawerContentComponentProps) => {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(s => s.auth.user);
+
   const { theme } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Kya aap logout karna chahte hain?', [
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Logout',
         style: 'destructive',
-        onPress: () => {
-          // TODO: auth state false karo (Context/Redux), tab RootNavigator
-          // apne aap Auth stack dikha dega.
-        },
+        // Keychain saaf hoga, status 'signedOut' hoga, aur RootNavigator
+        // apne aap Login screen dikha dega.
+        onPress: () => dispatch(signOut()),
       },
     ]);
   };
@@ -45,8 +49,10 @@ const CustomDrawerContent = (props: DrawerContentComponentProps) => {
       {/* Drawer Header */}
       <View style={styles.drawerHeader}>
         <Ionicons name="people-circle" size={60} color={colors.primary} />
-        <Text style={styles.userName}>Welcome User!</Text>
-        <Text style={styles.userEmail}>user@example.com</Text>
+        <Text style={styles.userName}>{user?.name || 'Welcome!'}</Text>
+        <Text style={styles.userEmail}>
+          {user?.email || (user?.phone ? `+91 ${user.phone}` : '')}
+        </Text>
       </View>
 
       {/* Drawer Items */}
@@ -120,6 +126,7 @@ const DrawerNavigator = () => {
   );
 };
 
+
 // ─── Styles (theme se) ────────────────────────────────────────────────────────
 const createStyles = (theme: Theme) => {
   const { colors, spacing, typography, fontFamilies } = theme;
@@ -160,3 +167,5 @@ const createStyles = (theme: Theme) => {
 };
 
 export default DrawerNavigator;
+
+

@@ -1,20 +1,32 @@
+// src/navigation/RootNavigator.tsx
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React, { useState } from 'react';
 
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
 import { RootStackParamList } from './types/navigationTypes';
+import { useAppDispatch, useAppSelector } from '../app/store/hooks'; 
+import { restoreSession } from '../features/auth/store/authSlice';
+import SplashScreen from '../features/auth/screens/SplashScreen';
 // import TempList from "../features/temscreens/TempList";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
-  // Baad mein Redux se aayega — abhi testing ke liye
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(s => s.auth.status);
+
+  // App khulte hi Keychain se saved login dhundo
+  useEffect(() => {
+    dispatch(restoreSession());
+  }, [dispatch]);
+
+  // Jab tak pata nahi chalta (loading) splash dikhao
+  if (status === 'loading') return <SplashScreen />;
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {isAuthenticated ? (
+      {status === 'signedIn' ? (
         <Stack.Screen name="App" component={AppNavigator} />
       ) : (
         <Stack.Screen name="Auth" component={AuthNavigator} />
