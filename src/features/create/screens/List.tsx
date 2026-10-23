@@ -36,8 +36,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon2 from 'react-native-vector-icons/Feather';
+// import Icon2 from 'react-native-vector-icons/FontAwesome6';
+
+
+
 
 import AppHeader from '../../../shared/components/headers/AppHeader';
+import BottomSheet from '../../../shared/components/sheets/BottomSheet';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { lightColors } from '../../../theme/colors';
 // Optional native modules — install na hon to ye 2 lines comment kar do,
@@ -51,7 +57,7 @@ type Theme = ReturnType<typeof useTheme>['theme'];
 
 // ─── Layout constants (theme se independent) ──────────────────────────────────
 const H_PADDING = 16;
-const BOTTOM_BAR_H = 92;
+
 
 // Route se aane wale items ka hi type (imageUrl optional)
 type SelectedP = ListItemParam;
@@ -163,7 +169,7 @@ const DEFAULT_ITEMS: SelectedP[] = [
 // STYLES (theme se)
 // ═══════════════════════════════════════════════════════════════════
 const createStyles = (theme: Theme) => {
-  const { colors, spacing, borderRadius, typography, fontFamilies } = theme;
+  const { colors, spacing, borderRadius, shadows, typography, fontFamilies } = theme;
 
   const onPrimary = colors.onPrimary; // primary ke upar ka text/icon
   const primaryMuted = colors.primaryMuted; // primary 6-digit hex hona chahiye
@@ -426,35 +432,73 @@ const createStyles = (theme: Theme) => {
     }),
 
     // ── Export bar ──
+    // ── Bottom bar (Save as draft + Download) ──
     xb: StyleSheet.create({
       wrap: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: H_PADDING,
+        paddingVertical: spacing.xs + 2,
         backgroundColor: colors.appBackground,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
-        paddingTop: spacing.sm + 2,
-        paddingHorizontal: spacing.sm,
-        paddingBottom: Platform.OS === 'ios' ? 26 : spacing.md,
+        gap: spacing.sm + 2,
       },
-      item: { flex: 1, alignItems: 'center', gap: spacing.xs },
-      itemDisabled: { opacity: 0.4 },
-      iconWrap: {
-        width: 42,
-        height: 42,
+      btn: {
+        flex: 1,
+        height: 46,
+        borderRadius: 23,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: spacing.sm,
+      },
+      draftBtn: { borderWidth: 1.5, borderColor: colors.primary },
+      downloadBtn: { backgroundColor: colors.primary, ...shadows.sm },
+      btnDisabled: { opacity: 0.4 },
+      draftTxt: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.primary,
+      },
+      downloadTxt: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.semiBold,
+        color: onPrimary,
+      },
+    }),
+
+    // ── Download sheet ──
+    dl: StyleSheet.create({
+      option: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+        padding: spacing.md + 2,
         borderRadius: borderRadius.lg - 2,
+        backgroundColor: colors.cardBg,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.sm + 2,
+      },
+      optionIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: borderRadius.md,
         backgroundColor: primaryMuted,
         alignItems: 'center',
         justifyContent: 'center',
       },
-      iconWrapWhatsapp: { backgroundColor: colors.whatsapp },
-      label: {
+      optionTitle: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.bold,
+        color: colors.textPrimary,
+      },
+      optionSub: {
         fontSize: typography.xs,
-        fontFamily: fontFamilies.semiBold,
+        fontFamily: fontFamilies.regular,
         color: colors.textMuted,
+        marginTop: 2,
       },
     }),
 
@@ -793,18 +837,17 @@ const EditItemModal = React.memo(
 // ═══════════════════════════════════════════════════════════════════
 // Bottom action bar — 4 buttons, icon + label
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// Bottom bar — Save as draft + Download
+// ═══════════════════════════════════════════════════════════════════
 const ExportBar = React.memo(
   ({
     onSaveDraft,
-    onSavePdf,
-    onSaveImage,
-    onShareWhatsapp,
+    onDownload,
     disabled,
   }: {
     onSaveDraft: () => void;
-    onSavePdf: () => void;
-    onSaveImage: () => void;
-    onShareWhatsapp: () => void;
+    onDownload: () => void;
     disabled: boolean;
   }) => {
     const { theme, xb } = useStyles();
@@ -814,55 +857,86 @@ const ExportBar = React.memo(
       <View style={xb.wrap}>
         <TouchableOpacity
           onPress={onSaveDraft}
-          style={xb.item}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
+          style={[xb.btn, xb.draftBtn]}
         >
-          <View style={xb.iconWrap}>
-            <Icon
-              name="content-save-outline"
-              size={20}
-              color={colors.primary}
-            />
-          </View>
-          <Text style={xb.label}>Draft</Text>
+          <Text style={xb.draftTxt}>Save as Draft</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={onSavePdf}
+          onPress={onDownload}
           disabled={disabled}
-          style={[xb.item, disabled && xb.itemDisabled]}
-          activeOpacity={0.8}
+          activeOpacity={0.9}
+          style={[xb.btn, xb.downloadBtn, disabled && xb.btnDisabled]}
         >
-          <View style={xb.iconWrap}>
-            <Icon name="file-pdf-box" size={20} color={colors.primary} />
-          </View>
-          <Text style={xb.label}>PDF</Text>
-        </TouchableOpacity>
+          {/* <Icon2 name="download" size={20} color={colors.onPrimary} /> */}
+          <Icon2 name="download" size={20} color={colors.onPrimary} style={{ transform: [{ scaleX: -1 }] }}/>
 
-        <TouchableOpacity
-          onPress={onSaveImage}
-          disabled={disabled}
-          style={[xb.item, disabled && xb.itemDisabled]}
-          activeOpacity={0.8}
-        >
-          <View style={xb.iconWrap}>
-            <Icon name="image-outline" size={20} color={colors.primary} />
-          </View>
-          <Text style={xb.label}>Image</Text>
-        </TouchableOpacity>
+          {/* <Icon2 name="person-walking-luggage" size={20} color={colors.onPrimary} style={{ transform: [{ scaleX: -1 }] }}/> */}
 
-        <TouchableOpacity
-          onPress={onShareWhatsapp}
-          disabled={disabled}
-          style={[xb.item, disabled && xb.itemDisabled]}
-          activeOpacity={0.8}
-        >
-          <View style={[xb.iconWrap, xb.iconWrapWhatsapp]}>
-            <Icon name="whatsapp" size={20} color={colors.onDark} />
-          </View>
-          <Text style={xb.label}>WhatsApp</Text>
+          <Text style={xb.downloadTxt}>Download</Text>
         </TouchableOpacity>
       </View>
+    );
+  },
+);
+
+// ═══════════════════════════════════════════════════════════════════
+// Download sheet — Save as PDF / Save as Image
+// ═══════════════════════════════════════════════════════════════════
+const DownloadSheet = React.memo(
+  ({
+    visible,
+    onClose,
+    onDismissed,
+    onPdf,
+    onImage,
+  }: {
+    visible: boolean;
+    onClose: () => void;
+    onDismissed: () => void;
+    onPdf: () => void;
+    onImage: () => void;
+  }) => {
+    const { theme, dl } = useStyles();
+    const { colors } = theme;
+
+    return (
+      <BottomSheet
+        visible={visible}
+        onClose={onClose}
+        onDismissed={onDismissed}
+        title="Download"
+        subtitle="Choose a format"
+      >
+        <TouchableOpacity style={dl.option} onPress={onPdf} activeOpacity={0.85}>
+          <View style={dl.optionIcon}>
+            <Icon name="file-pdf-box" size={24} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={dl.optionTitle}>Save as PDF</Text>
+            <Text style={dl.optionSub}>
+              A printable list with quantities and notes
+            </Text>
+          </View>
+          <Icon name="chevron-right" size={22} color={colors.textMuted} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={dl.option}
+          onPress={onImage}
+          activeOpacity={0.85}
+        >
+          <View style={dl.optionIcon}>
+            <Icon name="image-outline" size={24} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={dl.optionTitle}>Save as Image</Text>
+            <Text style={dl.optionSub}>A picture of your list, easy to share</Text>
+          </View>
+          <Icon name="chevron-right" size={22} color={colors.textMuted} />
+        </TouchableOpacity>
+      </BottomSheet>
     );
   },
 );
@@ -954,8 +1028,9 @@ const List: React.FC = () => {
 
   // header receipt icon
   // TODO: yahan preview modal / koi action wire karna hai. Abhi sirf state set hota hai.
+  // header receipt icon
+  // TODO: ...
   const handleOpenPreview = useCallback(() => setPreviewVisible(true), []);
-
   // ── export handlers ──
   // NOTE: exports POORI list (itemList) use karte hain, filtered nahi —
   // search sirf item dhundhne ke liye hai, export se items na girein.
@@ -973,25 +1048,35 @@ const List: React.FC = () => {
     Alert.alert('Draft Save Ho Gaya! ✅', `${itemCount} items save ho gaye.`);
   }, [itemCount]);
 
-  const handleShareWhatsapp = useCallback(async () => {
+  // const handleShareWhatsapp = useCallback(async () => {
+  //   if (itemCount === 0) return;
+  //   const text = buildPlainText();
+  //   const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
+  //   try {
+  //     const supported = await Linking.canOpenURL(url);
+  //     if (supported) {
+  //       await Linking.openURL(url);
+  //     } else {
+  //       // WhatsApp na ho to native share sheet
+  //       await Share.share({ message: text });
+  //     }
+  //   } catch {
+  //     Alert.alert(
+  //       'Share nahi ho paya',
+  //       'WhatsApp installed hai ki nahi check kar lein.',
+  //     );
+  //   }
+  // }, [itemCount, buildPlainText]);
+  // Header share icon: phone ki share sheet, plain text list ke saath
+  // (WhatsApp, SMS, email wagairah sab isi me aate hain)
+  const handleShare = useCallback(async () => {
     if (itemCount === 0) return;
-    const text = buildPlainText();
-    const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        // WhatsApp na ho to native share sheet
-        await Share.share({ message: text });
-      }
+      await Share.share({ message: buildPlainText(), title: listName });
     } catch {
-      Alert.alert(
-        'Share nahi ho paya',
-        'WhatsApp installed hai ki nahi check kar lein.',
-      );
+      Alert.alert('Could not share', 'Please try again.');
     }
-  }, [itemCount, buildPlainText]);
+  }, [itemCount, buildPlainText, listName]);
 
   const handleSaveAsPDF = useCallback(async () => {
     if (itemCount === 0) return;
@@ -1065,7 +1150,22 @@ const List: React.FC = () => {
       );
     }
   }, [itemCount]);
+  // ── Download sheet ──
+  const [downloadVisible, setDownloadVisible] = useState(false);
+  const pendingDownload = useRef<'pdf' | 'image' | null>(null);
 
+  // Pehle sheet band hogi, phir kaam chalega (iOS par sheet ke upar Alert nahi rukta)
+  const chooseDownload = useCallback((type: 'pdf' | 'image') => {
+    pendingDownload.current = type;
+    setDownloadVisible(false);
+  }, []);
+
+  const handleDownloadDismissed = useCallback(() => {
+    const type = pendingDownload.current;
+    pendingDownload.current = null;
+    if (type === 'pdf') handleSaveAsPDF();
+    else if (type === 'image') handleSaveAsImage();
+  }, [handleSaveAsPDF, handleSaveAsImage]);
   const renderItem = useCallback(
     ({ item }: { item: SelectedP }) => (
       <ListRow item={item} onEdit={handleEdit} />
@@ -1125,11 +1225,10 @@ const List: React.FC = () => {
         {/* ═════════════════════════════ App Header ═════════════════════════════ */}
         <AppHeader
           title={listName}
+          
           leftAction="back"
-          rightIcon="receipt-outline"
-          rightIconSet="ionicons"
-          onRightPress={handleOpenPreview}
-          rightBadge={itemCount}
+          rightIcon="share-outline"
+          onRightPress={handleShare}
           showThemeToggle={false}
         />
 
@@ -1189,7 +1288,9 @@ const List: React.FC = () => {
               renderItem={renderItem}
               contentContainerStyle={[
                 s.listContent,
-                { paddingTop: barHeight, paddingBottom: BOTTOM_BAR_H + 16 },
+                // { paddingTop: barHeight, paddingBottom: BOTTOM_BAR_H + 16 },  //92 
+                { paddingTop: barHeight, paddingBottom: 24 },
+
               ]}
               onScroll={handleScroll}
               scrollEventThrottle={16}
@@ -1212,12 +1313,18 @@ const List: React.FC = () => {
 
         <ExportBar
           onSaveDraft={handleSaveDraft}
-          onSavePdf={handleSaveAsPDF}
-          onSaveImage={handleSaveAsImage}
-          onShareWhatsapp={handleShareWhatsapp}
+          onDownload={() => setDownloadVisible(true)}
           disabled={itemCount === 0}
         />
 
+
+        <DownloadSheet
+          visible={downloadVisible}
+          onClose={() => setDownloadVisible(false)}
+          onDismissed={handleDownloadDismissed}
+          onPdf={() => chooseDownload('pdf')}
+          onImage={() => chooseDownload('image')}
+        />
         <EditItemModal
           visible={!!editingItem}
           item={editingItem}
@@ -1225,6 +1332,7 @@ const List: React.FC = () => {
           onSave={handleEditSave}
           onRemove={handleEditRemove}
         />
+
       </SafeAreaView>
     </View>
   );
