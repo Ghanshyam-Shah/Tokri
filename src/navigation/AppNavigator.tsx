@@ -7,6 +7,7 @@ import List from '../features/create/screens/List';
 import AddItem from '../features/catalog/screens/AddItem';
 import EditItem from '../features/catalog/screens/EditItem';
 import { AppStackParamList } from './types/navigationTypes';
+import HistoryList from '../features/history/screens/HistoryList';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
 
@@ -20,6 +21,7 @@ const AppNavigator = () => (
     <Stack.Screen name="List" component={List} />
     <Stack.Screen name="AddItem" component={AddItem} />
     <Stack.Screen name="EditItem" component={EditItem} />
+    <Stack.Screen name="HistoryList" component={HistoryList}/>
   </Stack.Navigator>
 );
 

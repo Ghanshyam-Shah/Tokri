@@ -102,9 +102,10 @@ const ListScreen = () => {
             )}
           </View>
 
-          <Text style={styles.cardPreview} numberOfLines={1}>
+{/* dont remove this line of code */}
+          {/* <Text style={styles.cardPreview} numberOfLines={1}>
             {item.preview}
-          </Text>
+          </Text> */}
         </View>
 
         <View style={styles.cardArrow}>

@@ -447,7 +447,7 @@ const createStyles = (theme: Theme) => {
       btn: {
         flex: 1,
         height: 46,
-        borderRadius: 23,
+        borderRadius: borderRadius.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
@@ -870,7 +870,7 @@ const ExportBar = React.memo(
           style={[xb.btn, xb.downloadBtn, disabled && xb.btnDisabled]}
         >
           {/* <Icon2 name="download" size={20} color={colors.onPrimary} /> */}
-          <Icon2 name="download" size={20} color={colors.onPrimary} style={{ transform: [{ scaleX: -1 }] }}/>
+          <Icon2 name="download" size={20} color={colors.onPrimary} style={{ transform: [{ scaleX: -1 }] }} />
 
           {/* <Icon2 name="person-walking-luggage" size={20} color={colors.onPrimary} style={{ transform: [{ scaleX: -1 }] }}/> */}
 
@@ -1225,7 +1225,7 @@ const List: React.FC = () => {
         {/* ═════════════════════════════ App Header ═════════════════════════════ */}
         <AppHeader
           title={listName}
-          
+
           leftAction="back"
           rightIcon="share-outline"
           onRightPress={handleShare}

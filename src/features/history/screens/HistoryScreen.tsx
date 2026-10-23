@@ -26,7 +26,7 @@ type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
 // ─── Main Component ───────────────────────────────────────────────────────
 const HistoryScreen = () => {
-    const navigation = useNavigation<NavProp>();
+  const navigation = useNavigation<NavProp>();
   const { theme } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -47,7 +47,7 @@ const HistoryScreen = () => {
     })).filter(section => section.data.length > 0);
   }, [searchQuery]);
 
-    const handleReuse = (item: HistoryItem) => {
+  const handleReuse = (item: HistoryItem) => {
     navigation.navigate('CreateListScreen', {
       listName: item.name,
       startDate: new Date().toISOString(),
@@ -71,20 +71,33 @@ const HistoryScreen = () => {
           <View style={styles.dot} />
           <Text style={styles.cardMetaText}>{item.itemCount} Items</Text>
         </View>
-        <Text style={styles.cardPreview} numberOfLines={1}>
+        {/* <Text style={styles.cardPreview} numberOfLines={1}>
           {item.preview}
-        </Text>
+        </Text> */}
       </View>
 
       {/* Re-use Action */}
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.reuseBtn}
         activeOpacity={0.7}
         onPress={() => handleReuse(item)}
+      > */}
+      <TouchableOpacity
+        style={styles.cardArrow}
+        onPress={() =>
+          navigation.navigate('HistoryList', {
+            listId: item.id,
+            listName: item.name,
+          })
+        }
       >
-        <Icon name="refresh" size={20} color={colors.primary} />
-        <Text style={styles.reuseText}>Reuse</Text>
+        <Icon
+          name="chevron-right"
+          size={20}
+          color={colors.textMuted}
+        />
       </TouchableOpacity>
+      {/* </TouchableOpacity> */}
     </TouchableOpacity>
   );
 
@@ -233,6 +246,16 @@ const createStyles = (theme: Theme) => {
       borderRadius: borderRadius.sm + 2,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+
+    cardArrow: {
+      marginLeft: spacing.md,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.cardBgVariant,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     reuseText: {
       fontSize: 11,

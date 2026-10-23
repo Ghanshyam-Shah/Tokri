@@ -97,6 +97,9 @@ const createStyles = (theme: Theme) => {
     // ── Bottom action bar ──
     // Absolute nahi: list ke neeche normal sibling. Bottom safe-area ka dhyan
     // SafeAreaView (edges 'bottom') rakhta hai, isliye extra padding nahi.
+    // ── Bottom action bar (Save as draft + Continue) ──
+    // Absolute nahi: list ke neeche normal sibling. Bottom safe-area ka dhyan
+    // SafeAreaView (edges 'bottom') rakhta hai, isliye extra padding nahi.
     ab: StyleSheet.create({
       wrap: {
         flexDirection: 'row',
@@ -106,30 +109,27 @@ const createStyles = (theme: Theme) => {
         backgroundColor: colors.appBackground,
         borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
-        gap: spacing.sm,
+        gap: spacing.sm + 2,
       },
-      circleBtn: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 1,
-        borderColor: colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-      },
-      continueBtn: {
+      btn: {
         flex: 1,
         height: 46,
-        borderRadius: 23,
-        backgroundColor: colors.primary,
+        borderRadius: borderRadius.md,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        ...shadows.sm,
+        gap: spacing.sm,
       },
+      draftBtn: { borderWidth: 1.5, borderColor: colors.primary },
+      continueBtn: { backgroundColor: colors.primary, ...shadows.sm },
       continueDisabled: { opacity: 0.4 },
+      draftTxt: {
+        fontSize: typography.sm + 1,
+        fontFamily: fontFamilies.semiBold,
+        color: colors.primary,
+      },
       continueTxt: {
-        fontSize: typography.md,
+        fontSize: typography.sm + 1,
         fontFamily: fontFamilies.semiBold,
         color: onPrimary,
       },
@@ -240,16 +240,17 @@ const SelectableProductCard = React.memo(
 // ═══════════════════════════════════════════════════════════════════
 // BOTTOM ACTION BAR — Save (circle) · Continue (pill) · Share (circle)
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// BOTTOM ACTION BAR — Save as draft · Continue
+// ═══════════════════════════════════════════════════════════════════
 const ActionBar = React.memo(
   ({
     onSaveDraft,
     onContinue,
-    onShare,
     continueDisabled,
   }: {
     onSaveDraft: () => void;
     onContinue: () => void;
-    onShare: () => void;
     continueDisabled: boolean;
   }) => {
     const { theme, ab } = useStyles();
@@ -260,36 +261,20 @@ const ActionBar = React.memo(
         <TouchableOpacity
           onPress={onSaveDraft}
           activeOpacity={0.85}
-          style={ab.circleBtn}
+          style={[ab.btn, ab.draftBtn]}
         >
-          <Icon name="content-save-outline" size={22} color={colors.primary} />
+          {/* <Icon name="content-save-outline" size={20} color={colors.primary} /> */}
+          <Text style={ab.draftTxt}>Save as draft</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={onContinue}
           disabled={continueDisabled}
           activeOpacity={0.9}
-          style={[ab.continueBtn, continueDisabled && ab.continueDisabled]}
+          style={[ab.btn, ab.continueBtn, continueDisabled && ab.continueDisabled]}
         >
           <Text style={ab.continueTxt}>Continue</Text>
-          <Icon
-            name="arrow-right"
-            size={18}
-            color={colors.onPrimary}
-            style={{ marginLeft: 6 }}
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={onShare}
-          activeOpacity={0.85}
-          style={ab.circleBtn}
-        >
-          <Icon
-            name="share-variant-outline"
-            size={20}
-            color={colors.primary}
-          />
+          <Icon name="arrow-right" size={18} color={colors.onPrimary} />
         </TouchableOpacity>
       </View>
     );
@@ -328,6 +313,7 @@ const CreateListScreen: React.FC = () => {
   // Pre-filled items hi "saved" baseline hain, isliye jab tak user kuch na badle
   // "List save nahi hui" alert nahi aayega.
   const savedSnapshotRef = useRef<string>(JSON.stringify(selectedProducts));  // back (header button, gesture, hardware) — stack me beforeRemove sabke liye fire hota hai
+
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
       const hasChanges =
@@ -497,9 +483,6 @@ const CreateListScreen: React.FC = () => {
     listName,
   ]);
 
-  const handleShare = useCallback(() => {
-    Alert.alert('Share', 'Share functionality aayegi!');
-  }, []);
 
   const selectedList = useMemo(
     () => Object.values(selectedProducts),
@@ -599,10 +582,8 @@ const CreateListScreen: React.FC = () => {
         <ActionBar
           onSaveDraft={handleSaveDraft}
           onContinue={handleContinue}
-          onShare={handleShare}
           continueDisabled={selectedCount === 0}
         />
-
         {/* ── List Preview + Edit (ek hi sheet) ── */}
         <ListSheet
           visible={sheetVisible}
