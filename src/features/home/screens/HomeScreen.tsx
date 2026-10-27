@@ -44,6 +44,7 @@ const createStyles = (theme: Theme) => {
   const { colors, spacing, borderRadius, shadows, typography, fontFamilies } =
     theme;
 
+ 
   return StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.appBackground },
     content: {

@@ -5,16 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 // ─── CategoryId ───────────────────────────────────────────────────
-export type CategoryId =
-  | 'all'
-  | 'vegetables'
-  | 'dairy'
-  | 'grains'
-  | 'spices'
-  | 'snacks'
-  | 'personal_care'
-  | 'beverages'
-  | 'cleaning';
+export type CategoryId = string;
 
 // ─── Category ─────────────────────────────────────────────────────
 export interface Category {

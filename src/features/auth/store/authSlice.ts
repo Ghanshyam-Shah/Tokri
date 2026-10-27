@@ -11,7 +11,7 @@ import {
   OtpFlow,
   OtpPurpose,
   RegisterPayload,
-} from '../../../src/features/auth/types';
+} from '../types';
 
 export interface AuthState {
   status: 'loading' | 'signedIn' | 'signedOut';

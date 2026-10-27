@@ -26,7 +26,6 @@ import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
-import EmptyState from '../../../shared/components/states/EmptyState';
 import ProductCard, {
   CARD_GAP,
   GRID_H_PADDING,
@@ -34,7 +33,9 @@ import ProductCard, {
 import QuantityStepper from '../../../shared/components/product/QuantityStepper';
 import ListSheet, { SheetView } from '../../list/components/ListSheet';
 import { Product, SelectedProduct } from '../../../Data/types';
-import { CATEGORIES, PRODUCTS, buildSelectedFromSource } from '../../../Data/DummyData';
+import { useCatalog } from '../../catalog/hooks/useCatalog';
+import CatalogListEmpty from '../../catalog/components/CatalogListEmpty';
+import { buildSelectedFromCatalog } from '../../../shared/utils/prefillFromSource';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -291,14 +292,17 @@ const CreateListScreen: React.FC = () => {
 
   const listName = route.params?.listName ?? 'Nayi List';
 
+  // Catalog Supabase se (default + user ke badlav)
+  const { products, categories, loading, error, refresh } = useCatalog();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Old List / Template / History se aaye to items pehle se bhare honge.
-  // useState ka lazy initializer sirf pehle render par chalta hai.
+  // Old List / Template / History se aaye to items pehle se bhare honge —
+  // catalog load hote hi niche wala effect bhar deta hai.
   const [selectedProducts, setSelectedProducts] = useState<
     Record<string, SelectedProduct>
-  >(() => buildSelectedFromSource(route.params?.sourceId));
+  >({});
 
   // ── Bottom sheet (preview + edit, ek hi sheet) ──
   const [sheetVisible, setSheetVisible] = useState(false);
@@ -343,27 +347,39 @@ const CreateListScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, selectedProducts]);
 
+  // Pre-fill (sourceId): catalog aate hi ek baar. Snapshot bhi usi ka, taaki jab tak
+  // user kuch na badle "List save nahi hui" alert na aaye.
+  const sourceId = route.params?.sourceId;
+  const prefilledRef = useRef(false);
+  useEffect(() => {
+    if (!sourceId || prefilledRef.current || products.length === 0) return;
+    prefilledRef.current = true;
+    const prefilled = buildSelectedFromCatalog(sourceId, products);
+    savedSnapshotRef.current = JSON.stringify(prefilled);
+    setSelectedProducts(prefilled);
+  }, [sourceId, products]);
+
   // ── Filter ──
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return PRODUCTS.filter(p => {
+    return products.filter(p => {
       const catOk =
         selectedCategory === 'all' || p.categoryId === selectedCategory;
       const srchOk =
         p.name.toLowerCase().includes(q) || p.nameHindi.includes(q);
       return catOk && srchOk;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
 
   // ── Selection handlers ──
   const handleAdd = useCallback((id: string) => {
-    const product = PRODUCTS.find(p => p.id === id);
+    const product = products.find(p => p.id === id);
     if (!product) return;
     setSelectedProducts(prev => ({
       ...prev,
       [id]: { ...product, quantity: 1 },
     }));
-  }, []);
+  }, [products]);
 
   const handleIncrease = useCallback((id: string) => {
     setSelectedProducts(prev => ({
@@ -545,7 +561,7 @@ const CreateListScreen: React.FC = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Search catalog / सूची खोजें..."
-            chips={CATEGORIES}
+            chips={categories}
             selectedChipId={selectedCategory}
             onSelectChip={setSelectedCategory}
           />
@@ -564,11 +580,13 @@ const CreateListScreen: React.FC = () => {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
+            refreshing={loading && products.length > 0}
+            onRefresh={refresh}
+            progressViewOffset={barHeight}
             ListEmptyComponent={
-              <EmptyState
-                icon="basket-off-outline"
-                title="Koi product nahi mila"
-                subtitle="Try another search or category"
+              <CatalogListEmpty
+                loading={loading && products.length === 0}
+                error={error}
               />
             }
             removeClippedSubviews

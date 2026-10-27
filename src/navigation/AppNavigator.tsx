@@ -21,7 +21,7 @@ const AppNavigator = () => (
     <Stack.Screen name="List" component={List} />
     <Stack.Screen name="AddItem" component={AddItem} />
     <Stack.Screen name="EditItem" component={EditItem} />
-    <Stack.Screen name="HistoryList" component={HistoryList}/>
+    <Stack.Screen name="HistoryList" component={HistoryList} />
   </Stack.Navigator>
 );
 

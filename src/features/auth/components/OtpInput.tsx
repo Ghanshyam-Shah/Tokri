@@ -81,7 +81,7 @@ const createStyles = (theme: Theme) => {
       fontFamily: fontFamilies.semiBold,
       color: colors.textPrimary,
     },
-    hidden: { ...StyleSheet.absoluteFillObject, opacity: 0 },
+    hidden: { ...StyleSheet.absoluteFill, opacity: 0 },
   });
 };
 

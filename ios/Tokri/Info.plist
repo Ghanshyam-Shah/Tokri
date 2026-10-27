@@ -54,6 +54,12 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Tokri saves your shopping list image to your photos.</string>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+<string>Take a photo of your product</string>
+<key>NSPhotoLibraryUsageDescription</key>
+<string>Choose a product photo from your gallery</string>
 </dict>
 </plist>

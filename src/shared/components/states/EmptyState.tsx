@@ -23,12 +23,13 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   icon = 'basket-off-outline',
   title,
   subtitle,
+  compact = false
 }) => {
   const { theme } = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, compact && styles.wrapCompact]}>
       <View style={styles.iconWrap}>
         <Icon name={icon} size={48} color={theme.colors.primary} />
       </View>
@@ -49,6 +50,10 @@ const createStyles = (theme: AppTheme) => {
       justifyContent: 'center',
       paddingTop: 80,
       paddingHorizontal: spacing.xxxl,
+    },
+    wrapCompact: {
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.xl,
     },
     iconWrap: {
       width: 80,

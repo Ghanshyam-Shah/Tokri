@@ -12,14 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { CATEGORIES, PRODUCTS } from '../../../Data/DummyData';
-import { Product } from '../../../Data/types'
+import { Product } from '../../../Data/types';
+import { useCatalog } from '../hooks/useCatalog';
+import CatalogListEmpty from '../components/CatalogListEmpty';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
-import EmptyState from '../../../shared/components/states/EmptyState';
 import ProductCard, {
   CARD_GAP,
   GRID_H_PADDING,
@@ -96,19 +96,22 @@ const CatalogScreen: React.FC = () => {
   const { colors } = theme;
   const s = useMemo(() => createStyles(theme), [theme]);
 
+  // Catalog Supabase se (default + user ke badlav)
+  const { products, categories, loading, error, refresh } = useCatalog();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
   const filteredProducts = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
-    return PRODUCTS.filter(p => {
+    return products.filter(p => {
       const catOk =
         selectedCategory === 'all' || p.categoryId === selectedCategory;
       const srchOk =
         p.name.toLowerCase().includes(q) || p.nameHindi.includes(q);
       return catOk && srchOk;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery]);
   const { barHeight, barTranslateY, onBarLayout, handleScroll } =
     useCollapsibleBar();
 
@@ -155,7 +158,7 @@ const CatalogScreen: React.FC = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Search catalog / सूची खोजें..."
-            chips={CATEGORIES}
+            chips={categories}
             selectedChipId={selectedCategory}
             onSelectChip={setSelectedCategory}
           />
@@ -174,13 +177,16 @@ const CatalogScreen: React.FC = () => {
             onScroll={handleScroll}
             scrollEventThrottle={16}
             keyboardShouldPersistTaps="handled"
+            refreshing={loading && products.length > 0}
+            onRefresh={refresh}
+            progressViewOffset={barHeight}
             ListEmptyComponent={
-              <EmptyState
-                icon="basket-off-outline"
-                title="Koi product nahi mila"
-                subtitle="Try another search or category"
+              <CatalogListEmpty
+                loading={loading && products.length === 0}
+                error={error}
               />
-            } removeClippedSubviews
+            }
+            removeClippedSubviews
             maxToRenderPerBatch={6}
             windowSize={10}
             initialNumToRender={6}

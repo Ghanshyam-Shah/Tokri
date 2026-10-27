@@ -14,10 +14,11 @@ export interface ListItemParam {
 /* ═════════════════════════════════ Auth Stack Params ═════════════════════════════════ */
 
 export type AuthStackParamList = {
-  Splash: undefined;
   Login: undefined;
   Register: undefined;
-  PhoneOTP: { phoneNumber: string };
+  ForgotPassword: undefined;
+  Otp: undefined;
+  ResetPassword: undefined;
 };
 
 /* ═════════════════════════════════ Home Stack Params ═════════════════════════════════ */
@@ -58,6 +59,10 @@ export type AppStackParamList = {
   AddItem: undefined;
   EditItem: {
     productId: string;
+  };
+    HistoryList: {
+    listId: string; // history item ki id (SOURCE_ITEMS ki key)
+    listName: string;
   };
 };
 
