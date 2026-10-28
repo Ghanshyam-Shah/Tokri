@@ -489,6 +489,7 @@ const CreateListScreen: React.FC = () => {
     navigation.navigate('List', {
       listId: route.params?.listId,
       listName,
+      description: route.params?.description,
       items: Object.values(selectedProducts),
     });
   }, [
@@ -496,6 +497,7 @@ const CreateListScreen: React.FC = () => {
     selectedProducts,
     navigation,
     route.params?.listId,
+    route.params?.description,
     listName,
   ]);
 

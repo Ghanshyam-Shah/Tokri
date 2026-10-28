@@ -9,6 +9,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
 import { makeUseStyles, AppTheme } from '../../../../shared/utils/makeUseStyles';
 import { SelectedP } from '../../constants/listDefaults';
+import { formatExportDate } from '../../utils/listExport';
 
 const createStyles = (theme: AppTheme) => {
   const { colors, spacing, typography, fontFamilies } = theme;
@@ -32,6 +33,14 @@ const createStyles = (theme: AppTheme) => {
       color: colors.onPrimary,
       opacity: 0.85,
       marginTop: 2,
+    },
+    exportDesc: {
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.regular,
+      color: colors.onPrimary,
+      opacity: 0.95,
+      marginTop: spacing.sm,
+      lineHeight: (typography.xs + 1) * 1.45,
     },
     exportHead: {
       flexDirection: 'row',
@@ -60,6 +69,12 @@ const createStyles = (theme: AppTheme) => {
       color: colors.textPrimary,
     },
     exportName: { fontFamily: fontFamilies.semiBold },
+    exportNameHi: {
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+      marginTop: 1,
+    },
     exportQty: {
       fontFamily: fontFamilies.bold,
       color: colors.primary,
@@ -86,10 +101,16 @@ const useStyles = makeUseStyles(createStyles);
 interface Props {
   captureRef: React.Ref<React.ComponentRef<typeof ViewShot>>;
   listName: string;
+  description?: string;
   items: SelectedP[];
 }
 
-const ExportImageView = ({ captureRef, listName, items }: Props) => {
+const ExportImageView = ({
+  captureRef,
+  listName,
+  description,
+  items,
+}: Props) => {
   const { styles: s } = useStyles();
 
   if (items.length === 0) return null;
@@ -103,7 +124,12 @@ const ExportImageView = ({ captureRef, listName, items }: Props) => {
       >
         <View style={s.exportHeader}>
           <Text style={s.exportTitle}>{listName}</Text>
-          <Text style={s.exportSub}>{items.length} items</Text>
+          <Text style={s.exportSub}>
+            {items.length} items • {formatExportDate()}
+          </Text>
+          {!!description?.trim() && (
+            <Text style={s.exportDesc}>{description.trim()}</Text>
+          )}
         </View>
 
         <View style={s.exportHead}>
@@ -122,7 +148,12 @@ const ExportImageView = ({ captureRef, listName, items }: Props) => {
             style={[s.exportRow, idx % 2 === 1 && s.exportRowAlt]}
           >
             <Text style={[s.exportCell, s.cNo]}>{idx + 1}</Text>
-            <Text style={[s.exportCell, s.exportName, s.cName]}>{it.name}</Text>
+            <View style={s.cName}>
+              <Text style={[s.exportCell, s.exportName]}>{it.name}</Text>
+              {!!it.nameHindi && (
+                <Text style={s.exportNameHi}>{it.nameHindi}</Text>
+              )}
+            </View>
             <Text style={[s.exportCell, s.cUnit]}>{it.unit}</Text>
             <Text style={[s.exportCell, s.exportQty, s.cQty]}>
               {it.quantity}

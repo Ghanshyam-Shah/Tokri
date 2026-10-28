@@ -3,6 +3,7 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { Category } from '../../../Data/types';
+import { signOut } from '../../auth/store/authSlice';
 import {
   CatalogProduct,
   fetchCategories,
@@ -53,6 +54,8 @@ const catalogSlice = createSlice({
         state.categories = action.payload.categories;
         state.products = action.payload.products;
       })
+      // Logout par saaf, taaki agle login par purana data na dikhe
+      .addCase(signOut.fulfilled, () => initialState)
       .addCase(loadCatalog.rejected, (state, action) => {
         state.status = 'error';
         state.error = (action.payload as string) ?? 'Could not load catalog';

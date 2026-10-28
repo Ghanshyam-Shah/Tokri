@@ -30,10 +30,16 @@ import {
 interface Params {
   items: SelectedP[];
   listName: string;
+  description?: string;
   captureRef: React.RefObject<React.ComponentRef<typeof ViewShot> | null>;
 }
 
-export const useListExport = ({ items, listName, captureRef }: Params) => {
+export const useListExport = ({
+  items,
+  listName,
+  description,
+  captureRef,
+}: Params) => {
   const itemCount = items.length;
 
   // Header share icon: phone ki share sheet, plain text list ke saath
@@ -42,18 +48,18 @@ export const useListExport = ({ items, listName, captureRef }: Params) => {
     if (itemCount === 0) return;
     try {
       await Share.share({
-        message: buildPlainText(items, listName),
+        message: buildPlainText(items, listName, description),
         title: listName,
       });
     } catch {
       Alert.alert('Could not share', 'Please try again.');
     }
-  }, [itemCount, items, listName]);
+  }, [itemCount, items, listName, description]);
 
   const handleSaveAsPDF = useCallback(async () => {
     if (itemCount === 0) return;
     try {
-      const html = buildPdfHtml(items, listName);
+      const html = buildPdfHtml(items, listName, description);
       const baseName = `${safeFileName(listName)}-${Date.now()}`;
 
       const pdf = await generatePDF({
@@ -83,7 +89,7 @@ export const useListExport = ({ items, listName, captureRef }: Params) => {
         'Please check that the packages are installed and the app is rebuilt.',
       );
     }
-  }, [items, listName, itemCount]);
+  }, [items, listName, description, itemCount]);
 
   const handleSaveAsImage = useCallback(async () => {
     if (itemCount === 0) return;

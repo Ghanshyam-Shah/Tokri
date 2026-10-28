@@ -124,6 +124,7 @@ const NewListScreen: React.FC = () => {
   const onPrimary = colors.onPrimary;
 
   const [listName, setListName] = useState('');
+  const [description, setDescription] = useState('');
   const [listType, setListType] = useState<ListType>('monthly');
 
   // Start date: default = aaj ki date
@@ -169,10 +170,11 @@ const NewListScreen: React.FC = () => {
     navigation.navigate('CreateListScreen', {
       listId: String(Date.now()),
       listName: listName.trim(),
+      description: description.trim() || undefined,
       startDate: startDate.toISOString(),
       sourceId: selectedSourceId ?? undefined,
     });
-  }, [listName, startDate, selectedSourceId, navigation]);
+  }, [listName, description, startDate, selectedSourceId, navigation]);
 
   const handleBack = useCallback(() => {
     navigation.goBack();
@@ -209,6 +211,26 @@ const NewListScreen: React.FC = () => {
                 { borderColor: listName ? colors.primary : colors.border },
               ]}
             />
+            <View style={styles.descBlock}>
+              <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
+                Description <Text style={styles.fieldLabelEn}>/ Optional</Text>
+              </Text>
+              <TextInput
+                value={description}
+                onChangeText={t => setDescription(t.slice(0, 150))}
+                placeholder="e.g. Diwali ke liye, ghar ka saaman..."
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={150}
+                textAlignVertical="top"
+                style={[
+                  styles.input,
+                  styles.descInput,
+                  { borderColor: description ? colors.primary : colors.border },
+                ]}
+              />
+              <Text style={styles.descCount}>{description.length}/150</Text>
+            </View>
 
             {/* List type */}
             <Text style={[styles.fieldLabel, styles.fieldLabelSpaced]}>
@@ -450,7 +472,21 @@ const createStyles = (theme: Theme) => {
       fontFamily: fontFamilies.medium,
       color: colors.textPrimary,
     },
-
+    descInput: {
+      height: undefined,        // fixed input height hatao
+      minHeight: 84,
+      paddingTop: spacing.sm + 2,
+      paddingBottom: spacing.sm + 2,
+    },
+    descCount: {
+      alignSelf: 'flex-end',
+      marginTop: spacing.xs,
+      marginBottom: spacing.xs,
+      fontSize: typography.xs,
+      fontFamily: fontFamilies.regular,
+      color: colors.textMuted,
+    },
+    descBlock: { marginBottom: spacing.xs },
     // ── Start date ──
     dateBox: {
       height: 48,

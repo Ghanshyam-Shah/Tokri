@@ -50,11 +50,14 @@ export type AppStackParamList = {
     listName?: string;
     startDate?: string; // ISO string, e.g. 2026-10-20T06:00:00.000Z
     sourceId?: string; // chuna hua Old List ya Template ka id
+    description?: string
+    
   };
   List: {
     listId?: string;
     listName?: string;
     items?: ListItemParam[];
+    description?: string
   };
   AddItem: undefined;
   EditItem: {

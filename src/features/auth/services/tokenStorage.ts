@@ -1,26 +1,29 @@
 // src/features/auth/services/tokenStorage.ts
-import * as Keychain from 'react-native-keychain';
-import { AuthSession } from '../types';
+//
+// Session ab Supabase sambhalta hai (login par save, token refresh, logout par saaf).
+// Ye file wahi purana interface rakhti hai, taaki authSlice na badalna pade.
 
-const SERVICE = 'tokri.auth';
+import { supabase } from '../../../lib/supabase';
+import { AuthSession } from '../types';
+import { toAuthSession } from '../../../features/auth/services/supabaseAuth';
 
 export const tokenStorage = {
-  async save(session: AuthSession): Promise<void> {
-    await Keychain.setGenericPassword('session', JSON.stringify(session), {
-      service: SERVICE,
-    });
-  },
+  // Supabase login par khud session save karta hai
+  async save(_session: AuthSession): Promise<void> {},
 
+  // App khulte hi: saved session hai to wahi user
   async load(): Promise<AuthSession | null> {
     try {
-      const creds = await Keychain.getGenericPassword({ service: SERVICE });
-      return creds ? (JSON.parse(creds.password) as AuthSession) : null;
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      return session ? await toAuthSession(session) : null;
     } catch {
       return null;
     }
   },
 
   async clear(): Promise<void> {
-    await Keychain.resetGenericPassword({ service: SERVICE });
+    await supabase.auth.signOut();
   },
 };
