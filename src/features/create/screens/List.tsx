@@ -118,6 +118,7 @@ const List: React.FC = () => {
   const { colors } = theme;
 
   const listName = route.params?.listName ?? 'Meri List';
+  const description = route.params?.description;
   const initialItems: SelectedP[] = route.params?.items ?? DEFAULT_ITEMS;
 
   const [items, setItems] = useState<Record<string, SelectedP>>(
@@ -198,6 +199,7 @@ const List: React.FC = () => {
   const { handleShare, handleSaveAsPDF, handleSaveAsImage } = useListExport({
     items: itemList,
     listName,
+    description,
     captureRef,
   });
 
@@ -319,6 +321,7 @@ const List: React.FC = () => {
         <ExportImageView
           captureRef={captureRef}
           listName={listName}
+          description={description}
           items={itemList}
         />
 

@@ -1,44 +1,5 @@
-// import React from 'react';
-// import { NavigationContainer } from '@react-navigation/native';
-// import { GestureHandlerRootView } from 'react-native-gesture-handler';
-// import { SafeAreaProvider } from 'react-native-safe-area-context';
-// import { StatusBar } from 'react-native';
 
-// import RootNavigator from './src/navigation/RootNavigator';
-// import { ThemeProvider, useTheme } from './src/app/providers/ThemeProvider';
-
-// const AppContent = () => {
-//   const {theme, isDark } = useTheme();
-
-//   return (
-//     <>
-//      <StatusBar
-//       barStyle={isDark ? 'light-content' : 'dark-content'}
-//       backgroundColor={theme.colors.appBackground}
-//       translucent={false}
-//     />
-
-//       <RootNavigator />
-//     </>
-//   );
-// };
-
-// export default function App() {
-//   return (
-//     <GestureHandlerRootView style={{ flex: 1 }}>
-//       <SafeAreaProvider>
-//         <ThemeProvider>
-//           <NavigationContainer>
-//             <AppContent />
-//           </NavigationContainer>
-//         </ThemeProvider>
-//       </SafeAreaProvider>
-//     </GestureHandlerRootView>
-//   );
-// }
-
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   NavigationContainer,
   DefaultTheme,
@@ -46,8 +7,8 @@ import {
 } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StatusBar } from 'react-native';
-
+import { StatusBar, Platform } from 'react-native';
+import SystemNavigationBar from 'react-native-system-navigation-bar';
 import RootNavigator from './src/navigation/RootNavigator';
 import { ThemeProvider, useTheme } from './src/app/providers/ThemeProvider';
 import { Provider } from 'react-redux';
@@ -71,6 +32,15 @@ const AppContent = () => {
     },
   };
 
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    SystemNavigationBar.setNavigationColor(
+      colors.bottomTabBar,        // tab bar ke saath match
+      isDark ? 'light' : 'dark',  // buttons/icons ka rang
+      'navigation',
+    );
+  }, [colors.bottomTabBar, isDark]);
+
   return (
     <NavigationContainer theme={navTheme}>
       <StatusBar
@@ -86,12 +56,12 @@ const AppContent = () => {
 export default function App() {
   return (
     <Provider store={store}>
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <ThemeProvider>
-          <AppContent />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView></Provider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <ThemeProvider>
+            <AppContent />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView></Provider>
   );
 }

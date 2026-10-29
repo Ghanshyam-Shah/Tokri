@@ -23,7 +23,9 @@ export const validateProductForm = ({
   quantity,
 }: FormValues): FormError | null => {
   if (!name.trim()) {
-    return { title: 'Name zaroori hai', message: 'Product ka naam daalein pehle.' };
+    return {
+      title: 'Name zaroori hai',
+      message: 'Product ka naam daalein pehle.' };
   }
   if (!nameHindi.trim()) {
     return {
@@ -32,10 +34,14 @@ export const validateProductForm = ({
     };
   }
   if (!selectedCategory) {
-    return { title: 'Category zaroori hai', message: 'Ek category select karein.' };
+    return { 
+      title: 'Category zaroori hai',
+      message: 'Ek category select karein.' };
   }
   if (!price.trim() || isNaN(Number(price)) || Number(price) <= 0) {
-    return { title: 'Price zaroori hai', message: 'Product ki sahi price daalein.' };
+    return { 
+      title: 'Price zaroori hai',
+      message: 'Product ki sahi price daalein.' };
   }
   if (!quantity.trim() || isNaN(Number(quantity)) || Number(quantity) <= 0) {
     return {
@@ -47,8 +53,14 @@ export const validateProductForm = ({
 };
 
 // "500g" -> { qty: "500", unitType: "g" }; parse na ho to 1/kg
-export const parseUnit = (unitStr: string): { qty: string; unitType: string } => {
+export const parseUnit = (
+  unitStr: string,
+): { qty: string; unitType: string } => {
   const match = unitStr.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/);
-  if (match) return { qty: match[1], unitType: match[2] };
+
+  if (match) {
+    return { qty: match[1], unitType: match[2] };
+  }
+
   return { qty: '1', unitType: 'kg' };
 };
