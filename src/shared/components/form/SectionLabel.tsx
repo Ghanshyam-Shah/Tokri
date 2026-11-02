@@ -41,7 +41,7 @@ const useStyles = makeUseStyles(createStyles);
 interface Props {
   icon: string;
   en: string;
-  hi: string;
+  hi?: string; // khali ho to '/' aur hindi text nahi dikhta
 }
 
 const SectionLabel = React.memo(({ icon, en, hi }: Props) => {
@@ -52,8 +52,12 @@ const SectionLabel = React.memo(({ icon, en, hi }: Props) => {
     <View style={sec.row}>
       <Icon name={icon} size={14} color={colors.primary} />
       <Text style={sec.en}>{en}</Text>
-      <Text style={sec.slash}>/</Text>
-      <Text style={sec.hi}>{hi}</Text>
+      {!!hi?.trim() && (
+        <>
+          <Text style={sec.slash}>/</Text>
+          <Text style={sec.hi}>{hi}</Text>
+        </>
+      )}
     </View>
   );
 });
