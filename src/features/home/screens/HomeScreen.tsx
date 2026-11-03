@@ -20,6 +20,7 @@ import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { useAppSelector } from '../../../app/store/hooks';
 import { HistoryItem } from '../../../Data/types';
+import { goToNewList } from '../../../shared/utils/navHelpers';
 import { useLists } from '../../savedLists/hooks/useLists';
 import { ListRow } from '../../savedLists/services/listsService';
 import {
@@ -327,11 +328,7 @@ const HomeScreen: React.FC = () => {
       startDate: l.startDate ?? undefined,
     });
   const reuse = (h: HistoryItem) =>
-    navigation.navigate('CreateListScreen', {
-      listName: h.name,
-      startDate: new Date().toISOString(),
-      sourceId: h.id,
-    });
+    goToNewList(navigation, { sourceId: h.id, sourceName: h.name });
 
   return (
     <SafeAreaView style={s.root} edges={['top']}>
@@ -412,7 +409,7 @@ const HomeScreen: React.FC = () => {
           >
             {drafts.length === 0 && (
               <Text style={[s.listMeta, { paddingHorizontal: H_PADDING }]}>
-                No any active list. Create new list.
+                Koi draft list nahi hai. "Create new list" dabayein.
               </Text>
             )}
             {drafts.map(l => (

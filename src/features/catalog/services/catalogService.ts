@@ -6,7 +6,7 @@
 // Screens ko DB ke column names nahi dikhte: yahan `Product` / `Category` type me badal dete hain.
 
 import { supabase, ensureSession } from '../../../lib/supabase';
-import { Product, Category } from '../../../Data/types';
+import { Product, Category } from '../../../../../Data/types';
 
 // Product + ye pata ki wo default hai ya user ka, aur uska override row (agar hai)
 export interface CatalogProduct extends Product {
@@ -171,6 +171,7 @@ export const updateProduct = async (
 ): Promise<void> => {
   await ensureSession();
   const row = toRow(input);
+  const oldImage = product.imageUrl;
 
   if (product.userProductId) {
     const { error } = await supabase
@@ -184,6 +185,9 @@ export const updateProduct = async (
       .insert({ ...row, product_id: product.id });
     if (error) throw error;
   }
+
+  // photo badli ya hata di -> purani photo Storage se hatao (agar kahin use nahi ho rahi)
+  if (oldImage && oldImage !== input.imageUrl) await removeImageIfUnused(oldImage);
 };
 
 // Delete: user ka apna product -> row hatao.
@@ -197,6 +201,8 @@ export const deleteProduct = async (product: CatalogProduct): Promise<void> => {
       .delete()
       .eq('id', product.id);
     if (error) throw error;
+    // product gaya -> uski photo bhi (agar kisi list me use nahi ho rahi)
+    await removeImageIfUnused(product.imageUrl);
     return;
   }
 
@@ -261,4 +267,84 @@ export const uploadProductImage = async (localUri: string): Promise<string> => {
 export const resolveImageUrl = async (uri: string | null): Promise<string> => {
   if (!uri) return '';
   return isLocalUri(uri) ? uploadProductImage(uri) : uri;
+};
+
+// ─── Photo cleanup (Storage me bachi photos) ───────────────────────────────
+// Photo tabhi hatti hai jab koi bhi cheez use use na kar rahi ho:
+//   user_products.image_url (products) aur list_items.image_url (lists ki snapshot).
+// Shak ho (query fail) to photo NAHI hatti.
+const BUCKET = 'product-images';
+
+// public URL -> bucket ke andar ka path ("<user_id>/<time>.jpg"). Bucket ka nahi to null
+// (jaise default products ke unsplash links).
+const pathFromUrl = (url?: string | null): string | null => {
+  if (!url) return null;
+  const marker = `/${BUCKET}/`;
+  const i = url.indexOf(marker);
+  if (i < 0) return null;
+  return decodeURIComponent(url.slice(i + marker.length).split('?')[0]);
+};
+
+const isImageUsed = async (url: string): Promise<boolean> => {
+  const [a, b] = await Promise.all([
+    supabase
+      .from('user_products')
+      .select('id', { count: 'exact', head: true })
+      .eq('image_url', url),
+    supabase
+      .from('list_items')
+      .select('id', { count: 'exact', head: true })
+      .eq('image_url', url),
+  ]);
+  if (a.error || b.error) return true; // doubt me file mat hatao
+  return (a.count ?? 0) > 0 || (b.count ?? 0) > 0;
+};
+
+export const removeImageIfUnused = async (
+  url?: string | null,
+): Promise<void> => {
+  try {
+    const path = pathFromUrl(url);
+    if (!url || !path) return;
+    if (await isImageUsed(url)) return;
+    await supabase.storage.from(BUCKET).remove([path]);
+  } catch {
+    // cleanup fail ho to koi baat nahi, agli sweep me hat jayegi
+  }
+};
+
+// Purani bachi photos (jaise upload ke baad save fail ho gaya) ek baar saaf karo.
+// Sirf 24 ghante se purani files, taaki abhi upload hui photo na hate.
+const SWEEP_MAX = 50;
+const DAY_MS = 24 * 60 * 60 * 1000;
+let sweptFor: string | null = null;
+
+export const sweepOrphanImagesOnce = async (): Promise<number> => {
+  try {
+    const user = await ensureSession();
+    if (sweptFor === user.id) return 0;
+    sweptFor = user.id;
+
+    const { data: files, error } = await supabase.storage
+      .from(BUCKET)
+      .list(user.id, { limit: 100 });
+    if (error || !files) return 0;
+
+    const old = files
+      .filter(f => f.name && f.created_at && Date.now() - Date.parse(f.created_at) > DAY_MS)
+      .slice(0, SWEEP_MAX);
+
+    const orphans: string[] = [];
+    for (const f of old) {
+      const path = `${user.id}/${f.name}`;
+      const url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+      if (!(await isImageUsed(url))) orphans.push(path);
+    }
+    if (orphans.length > 0) {
+      await supabase.storage.from(BUCKET).remove(orphans);
+    }
+    return orphans.length;
+  } catch {
+    return 0;
+  }
 };

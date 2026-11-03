@@ -7,7 +7,7 @@
 //                          DownloadSheet, ExportImageView
 //   hooks/*             -> useListExport (share/PDF/image), useCollapsibleBar
 //   utils/listExport.ts -> permission, file name, PDF html
-//   constants/listDefaults.ts -> categories, fallback items
+//   constants/listDefaults.ts -> layout constant + item type
 // Colors/fonts/spacing: sab useTheme() se.
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
@@ -38,11 +38,10 @@ import DownloadSheet from '../components/list/DownloadSheet';
 import ExportImageView from '../components/list/ExportImageView';
 import { useListExport } from '../hooks/useListExport';
 import { useSaveList } from '../hooks/useSaveList';
+import { useCatalog } from '../../catalog/hooks/useCatalog';
 import { useCollapsibleBar } from '../hooks/useCollapsibleBar';
 import {
   H_PADDING,
-  CATEGORIES,
-  DEFAULT_ITEMS,
   SelectedP,
 } from '../constants/listDefaults';
 
@@ -120,7 +119,8 @@ const List: React.FC = () => {
 
   const listName = route.params?.listName ?? 'Meri List';
   const description = route.params?.description;
-  const initialItems: SelectedP[] = route.params?.items ?? DEFAULT_ITEMS;
+  const { categories } = useCatalog(); // category chips Supabase se
+  const initialItems: SelectedP[] = route.params?.items ?? [];
 
   const [items, setItems] = useState<Record<string, SelectedP>>(
     Object.fromEntries(initialItems.map(i => [i.id, i])),
@@ -325,7 +325,7 @@ const List: React.FC = () => {
             </View>
 
             <CategoryChips
-              categories={CATEGORIES}
+              categories={categories}
               selected={selectedCategory}
               onSelect={setSelectedCategory}
             />

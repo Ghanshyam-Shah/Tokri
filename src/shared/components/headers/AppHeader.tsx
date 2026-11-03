@@ -250,7 +250,9 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             icon={isDark ? 'white-balance-sunny' : 'weather-night'}
             onPress={toggleTheme}
             size={22}
-            color={isDark ? colors.themeToggleSun : colors.themeToggleMoon}
+            // color={isDark ? colors.themeToggleSun : colors.themeToggleMoon}
+            color={isDark ? colors.headerContent : colors.headerContent}
+
             radius={borderRadius.sm}
           />
         )}

@@ -175,6 +175,8 @@ export const saveList = async (
       name: input.name,
       description,
     };
+    if (input.listType) patch.list_type = input.listType;
+    if (input.startDate) patch.start_date = toDateOnly(input.startDate);
     if (completedNow) {
       patch.status = 'completed';
       patch.completed_at = new Date().toISOString();

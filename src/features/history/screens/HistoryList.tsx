@@ -16,7 +16,8 @@ import EmptyState from '../../../shared/components/states/EmptyState';
 import ListItemRow from '../../../shared/components/product/ListItemRow';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { CATEGORIES } from '../../../Data/DummyData';
+import { useCatalog } from '../../catalog/hooks/useCatalog';
+import { goToNewList } from '../../../shared/utils/navHelpers';
 import { fetchListItems } from '../../savedLists/services/listsService';
 import { SelectedProduct } from '../../../Data/types';
 import { borderRadius } from '../../../theme';
@@ -34,6 +35,7 @@ const HistoryList: React.FC = () => {
   const s = useMemo(() => createStyles(theme), [theme]);
 
   const { listId, listName } = route.params;
+  const { categories } = useCatalog(); // category chips Supabase se
 
   // History entry ke items (Supabase se)
   const [items, setItems] = useState<SelectedProduct[]>([]);
@@ -88,11 +90,7 @@ const HistoryList: React.FC = () => {
 
   // Reuse: CreateListScreen khulegi, items pre-filled
   const handleReuse = useCallback(() => {
-    navigation.navigate('CreateListScreen', {
-      listName,
-      startDate: new Date().toISOString(),
-      sourceId: listId,
-    });
+    goToNewList(navigation, { sourceId: listId, sourceName: listName });
   }, [navigation, listName, listId]);
 
   const renderItem = useCallback(
@@ -118,7 +116,7 @@ const HistoryList: React.FC = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             searchPlaceholder="Search this list..."
-            chips={CATEGORIES}
+            chips={categories}
             selectedChipId={selectedCategory}
             onSelectChip={setSelectedCategory}
           />

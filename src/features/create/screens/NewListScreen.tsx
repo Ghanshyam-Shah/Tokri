@@ -1,6 +1,6 @@
 // src/features/list/screens/NewListScreen.tsx
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,12 @@ import {
 } from 'react-native';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -22,7 +27,18 @@ import ChipGroup from '../../../shared/components/chips/ChipGroup';
 import SegmentedTabs, {
   SegmentTab,
 } from '../../../shared/components/tabs/SegmentedTabs';
-import { AppStackParamList } from '../../../navigation/types/navigationTypes';
+import {
+  AppStackParamList,
+  CreateStackParamList,
+} from '../../../navigation/types/navigationTypes';
+import SectionLabel from '../../../shared/components/form/SectionLabel';
+import { useAppDispatch, useAppSelector } from '../../../app/store/hooks';
+import {
+  resetNewList,
+  setNewListFields,
+  setNewListSource,
+  startNewListFromSource,
+} from '../store/newListSlice';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { LIST_TYPES } from '../../../Data/DummyData';
@@ -63,53 +79,6 @@ const isToday = (d: Date) => {
 
 
 
-// ─── SectionLabel ─────────────────────────────────────────────────────────────
-const SectionLabel = React.memo(
-  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => {
-    const { theme } = useTheme();
-    const { colors, typography, fontFamilies, spacing } = theme;
-
-    const sec = useMemo(
-      () =>
-        StyleSheet.create({
-          row: {
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: spacing.xs + 2,
-            marginBottom: spacing.md + 2,
-          },
-          en: {
-            fontSize: typography.xs,
-            fontFamily: fontFamilies.bold,
-            color: colors.primary,
-            letterSpacing: 0.8,
-          },
-          slash: {
-            fontSize: typography.xs,
-            fontFamily: fontFamilies.regular,
-            color: colors.textMuted,
-            opacity: 0.5,
-          },
-          hi: {
-            fontSize: typography.xs,
-            fontFamily: fontFamilies.semiBold,
-            color: colors.primary,
-          },
-        }),
-      [colors, typography, fontFamilies, spacing],
-    );
-
-    return (
-      <View style={sec.row}>
-        <Icon name={icon} size={14} color={colors.primary} />
-        <Text style={sec.en}>{en}</Text>
-
-        <Text style={sec.hi}>{hi}</Text>
-      </View>
-    );
-  },
-);
-
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const NewListScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
@@ -120,17 +89,66 @@ const NewListScreen: React.FC = () => {
   // primary ke upar ka text/icon (light me white, dark me dark)
   const onPrimary = colors.onPrimary;
 
-  const [listName, setListName] = useState('');
-  const [description, setDescription] = useState('');
-  const [listType, setListType] = useState<ListType>('monthly');
+  // Form ka data Redux me hai: CreateListScreen se back aane par waisa hi rehta hai,
+  // Cancel / Discard / Save & Exit / tab chhodne par saaf ho jata hai.
+  const dispatch = useAppDispatch();
+  const {
+    listName,
+    description,
+    listType,
+    startDate: startIso,
+    sourceId: selectedSourceId,
+    sourceName,
+    draftListId,
+  } = useAppSelector(s => s.newList);
+  const startDate = useMemo(() => new Date(startIso), [startIso]);
 
-  // Start date: default = aaj ki date
-  const [startDate, setStartDate] = useState<Date>(() => new Date());
+  const setListName = useCallback(
+    (v: string) => dispatch(setNewListFields({ listName: v })),
+    [dispatch],
+  );
+  const setDescription = useCallback(
+    (v: string) => dispatch(setNewListFields({ description: v })),
+    [dispatch],
+  );
+  const setListType = useCallback(
+    (v: ListType) => dispatch(setNewListFields({ listType: v })),
+    [dispatch],
+  );
+  const setStartDate = useCallback(
+    (d: Date) => dispatch(setNewListFields({ startDate: d.toISOString() })),
+    [dispatch],
+  );
+
+  // Reuse (History / Home) se aaye to: naya form, source chuna hua, naam khali
+  const route = useRoute<RouteProp<CreateStackParamList, 'NewListScreen'>>();
+  const stackNav =
+    useNavigation<NativeStackNavigationProp<CreateStackParamList, 'NewListScreen'>>();
+  const paramSourceId = route.params?.sourceId;
+  const paramSourceName = route.params?.sourceName;
+  useEffect(() => {
+    if (!paramSourceId) return;
+    dispatch(
+      startNewListFromSource({ id: paramSourceId, name: paramSourceName ?? '' }),
+    );
+    stackNav.setParams({ sourceId: undefined, sourceName: undefined });
+  }, [paramSourceId, paramSourceName, dispatch, stackNav]);
+
+  // Is screen se bahar (Create List ke alawa) jaane par form saaf
+  const goingToCreateRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      goingToCreateRef.current = false;
+      return () => {
+        if (!goingToCreateRef.current) dispatch(resetNewList());
+      };
+    }, [dispatch]),
+  );
+
   const [showPicker, setShowPicker] = useState(false);
 
   // Template section: tab + selected item (ek hi select hota hai)
   const [sourceTab, setSourceTab] = useState<SourceTab>('old');
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
 
   // Old Lists = completed lists, Templates = save kiye hue templates (Supabase se)
   const { completed, templates } = useLists();
@@ -161,30 +179,48 @@ const NewListScreen: React.FC = () => {
   // tab badalne par purana selection hata do (dusre tab ka item hidden rehta)
   const handleSourceTabChange = useCallback((id: string) => {
     setSourceTab(id as SourceTab);
-    setSelectedSourceId(null);
-  }, []);
+    dispatch(setNewListSource({ id: null, name: null }));
+  }, [dispatch]);
 
-  const handleToggleSource = useCallback((id: string) => {
-    setSelectedSourceId(prev => (prev === id ? null : id));
-  }, []);
+  const handleToggleSource = useCallback(
+    (id: string, name: string) => {
+      const same = selectedSourceId === id;
+      dispatch(setNewListSource(same ? { id: null, name: null } : { id, name }));
+    },
+    [dispatch, selectedSourceId],
+  );
 
   const handleCreate = useCallback(() => {
     if (!listName.trim()) {
       Alert.alert('Naam zaroori hai', 'List ka naam daalein pehle.');
       return;
     }
+    goingToCreateRef.current = true; // wapas aane par form waisa hi rahe
     navigation.navigate('CreateListScreen', {
-      listId: String(Date.now()),
+      // pehle se draft bani hai to wahi khulti hai (products ke saath)
+      listId: draftListId ?? undefined,
       listName: listName.trim(),
       description: description.trim() || undefined,
-      startDate: startDate.toISOString(),
+      listType,
+      startDate: startIso,
       sourceId: selectedSourceId ?? undefined,
+      fromNew: true,
     });
-  }, [listName, description, startDate, selectedSourceId, navigation]);
+  }, [
+    listName,
+    description,
+    listType,
+    startIso,
+    selectedSourceId,
+    draftListId,
+    navigation,
+  ]);
 
+  // Cancel: form saaf karke wapas
   const handleBack = useCallback(() => {
+    dispatch(resetNewList());
     navigation.goBack();
-  }, [navigation]);
+  }, [dispatch, navigation]);
 
   return (
     <View style={styles.root}>
@@ -210,7 +246,9 @@ const NewListScreen: React.FC = () => {
             <TextInput
               value={listName}
               onChangeText={setListName}
-              placeholder="e.g. May 2025 ki List..."
+              placeholder={
+                sourceName ? `e.g. ${sourceName} (new)` : 'e.g. May 2025 ki List...'
+              }
               placeholderTextColor={colors.textMuted}
               style={[
                 styles.input,
@@ -302,6 +340,23 @@ const NewListScreen: React.FC = () => {
           <View style={styles.section}>
             <SectionLabel icon="content-copy" en="USE TEMPLATE" hi="" />
 
+            {!!selectedSourceId && (
+              <View style={styles.usingRow}>
+                <Icon name="content-copy" size={14} color={colors.primary} />
+                <Text style={styles.usingText} numberOfLines={1}>
+                  Using: {sourceName || 'selected list'}
+                </Text>
+                <TouchableOpacity
+                  onPress={() =>
+                    dispatch(setNewListSource({ id: null, name: null }))
+                  }
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Icon name="close-circle" size={18} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            )}
+
             <SegmentedTabs
               tabs={SOURCE_TABS}
               selectedId={sourceTab}
@@ -319,7 +374,7 @@ const NewListScreen: React.FC = () => {
                   return (
                     <TouchableOpacity
                       key={item.id}
-                      onPress={() => handleToggleSource(item.id)}
+                      onPress={() => handleToggleSource(item.id, item.name)}
                       activeOpacity={0.8}
                       style={[
                         styles.templateCard,
@@ -525,6 +580,22 @@ const createStyles = (theme: Theme) => {
     dateChevron: { marginLeft: 'auto' },
 
     // ── Template section ──
+    usingRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primaryMuted,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.md,
+    },
+    usingText: {
+      flex: 1,
+      fontSize: typography.xs + 1,
+      fontFamily: fontFamilies.semiBold,
+      color: colors.primary,
+    },
     tabs: { marginBottom: spacing.md },
     sourceList: { gap: spacing.sm },
     emptyText: {

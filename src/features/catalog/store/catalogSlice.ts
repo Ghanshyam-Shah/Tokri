@@ -8,6 +8,7 @@ import {
   CatalogProduct,
   fetchCategories,
   fetchProducts,
+  sweepOrphanImagesOnce,
 } from '../services/catalogService';
 
 interface CatalogState {
@@ -32,6 +33,7 @@ export const loadCatalog = createAsyncThunk(
         fetchCategories(),
         fetchProducts(),
       ]);
+      sweepOrphanImagesOnce(); // peeche chalta hai, load ko nahi rokta
       return { categories, products };
     } catch (e: any) {
       return rejectWithValue(e?.message ?? 'Could not load catalog');

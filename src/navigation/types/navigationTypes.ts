@@ -31,7 +31,10 @@ export type ListStackParamList = { ListMain: undefined };
 
 /* ═════════════════════════════════ Create Stack Params ═════════════════════════════════ */
 
-export type CreateStackParamList = { NewListScreen: undefined };
+export type CreateStackParamList = {
+  // Reuse (History / Home) se aaye to source ke saath khulti hai
+  NewListScreen: { sourceId?: string; sourceName?: string } | undefined;
+};
 
 /* ═════════════════════════════════ Catalog Stack Params ═════════════════════════════════ */
 
@@ -52,6 +55,7 @@ export type AppStackParamList = {
     sourceId?: string; // chuna hua Old List ya Template ka id
     description?: string;
     listType?: 'monthly' | 'weekly' | 'festival' | 'custom';
+    fromNew?: boolean; // New List screen se aayi (draft ki id wapas wahan yaad rakhni hai)
   };
   List: {
     listId?: string;

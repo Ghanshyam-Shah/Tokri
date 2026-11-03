@@ -37,6 +37,11 @@ import { useCatalog } from '../../catalog/hooks/useCatalog';
 import CatalogListEmpty from '../../catalog/components/CatalogListEmpty';
 import { buildSelectedFromItems } from '../../../shared/utils/prefillFromSource';
 import { fetchListItems, isUuid } from '../../savedLists/services/listsService';
+import { useSaveList } from '../hooks/useSaveList';
+import { useAppDispatch } from '../../../app/store/hooks';
+import { resetNewList, setNewListDraftId } from '../store/newListSlice';
+import { goHome } from '../../../shared/utils/navHelpers';
+import { ListItemParam } from '../../../navigation/types/navigationTypes';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -293,6 +298,28 @@ const CreateListScreen: React.FC = () => {
 
   const listName = route.params?.listName ?? 'Nayi List';
 
+  // Supabase me list save (draft). Pehli save par list ban jati hai.
+  const dispatch = useAppDispatch();
+  const { save: rawSave } = useSaveList({
+    listId: route.params?.listId,
+    listName,
+    description: route.params?.description,
+    listType: route.params?.listType,
+    startDate: route.params?.startDate,
+  });
+
+  // Save ke baad, New List se aayi hai to draft ki id wahan yaad rakho:
+  // back karke wapas aane par wahi products khulenge.
+  const fromNew = !!route.params?.fromNew;
+  const save = useCallback(
+    async (items: ListItemParam[], status: 'draft' | 'completed') => {
+      const id = await rawSave(items, status);
+      if (fromNew) dispatch(setNewListDraftId(id));
+      return id;
+    },
+    [rawSave, fromNew, dispatch],
+  );
+
   // Catalog Supabase se (default + user ke badlav)
   const { products, categories, loading, error, refresh } = useCatalog();
 
@@ -319,34 +346,54 @@ const CreateListScreen: React.FC = () => {
   // "List save nahi hui" alert nahi aayega.
   const savedSnapshotRef = useRef<string>(JSON.stringify(selectedProducts));  // back (header button, gesture, hardware) — stack me beforeRemove sabke liye fire hota hai
 
+  // Back (header button, gesture, hardware):
+  //   - koi badlav nahi  -> seedha wapas (New List ka form waisa hi rehta hai)
+  //   - badlav hai       -> poochho: Save & Exit / Discard dono Home par le jate hain
+  const leavingRef = useRef(false);
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', e => {
+      if (leavingRef.current) return;
       const hasChanges =
         JSON.stringify(selectedProducts) !== savedSnapshotRef.current;
-      if (!hasChanges) return;
+      if (!hasChanges || Object.keys(selectedProducts).length === 0) return;
+
       e.preventDefault();
+
+      const exitToHome = () => {
+        leavingRef.current = true;
+        dispatch(resetNewList()); // New List ka form saaf
+        goHome(navigation);
+      };
+      const saveAndExit = () =>
+        save(Object.values(selectedProducts), 'draft')
+          .then(() => {
+            savedSnapshotRef.current = JSON.stringify(selectedProducts);
+            exitToHome();
+          })
+          .catch(() => {
+            Alert.alert(
+              'List save nahi hui',
+              'Internet check karke dobara try karein.',
+              [
+                { text: 'Stay', style: 'cancel' },
+                { text: 'Retry', onPress: saveAndExit },
+                { text: 'Discard', style: 'destructive', onPress: exitToHome },
+              ],
+            );
+          });
+
       Alert.alert(
         'List save nahi hui',
-        'Aap is list ko chhod ke jaana chahte hain?',
+        'Aap is list ko save karna chahte hain?',
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => { } },
-          {
-            text: 'Discard',
-            style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-          {
-            text: 'Save & Exit',
-            onPress: () => {
-              savedSnapshotRef.current = JSON.stringify(selectedProducts);
-              navigation.dispatch(e.data.action);
-            },
-          },
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: exitToHome },
+          { text: 'Save & Exit', onPress: saveAndExit },
         ],
       );
     });
     return unsubscribe;
-  }, [navigation, selectedProducts]);
+  }, [navigation, selectedProducts, save, dispatch]);
 
   // Pre-fill: catalog aate hi ek baar. Snapshot bhi usi ka, taaki jab tak user
   // kuch na badle "List save nahi hui" na aaye.
@@ -357,15 +404,14 @@ const CreateListScreen: React.FC = () => {
   useEffect(() => {
     if (!fromId || prefilledRef.current || products.length === 0) return;
     prefilledRef.current = true;
-
-    const apply = (sel: Record<string, SelectedProduct>) => {
-      savedSnapshotRef.current = JSON.stringify(sel);
-      setSelectedProducts(sel);
-    };
-
     if (!isUuid(fromId)) return;
+
     fetchListItems(fromId)
-      .then(items => apply(buildSelectedFromItems(items, products)))
+      .then(items => {
+        const sel = buildSelectedFromItems(items, products);
+        savedSnapshotRef.current = JSON.stringify(sel);
+        setSelectedProducts(sel);
+      })
       .catch(() =>
         Alert.alert('List load nahi hui', 'Internet check karke dobara kholein.'),
       );
@@ -485,32 +531,45 @@ const CreateListScreen: React.FC = () => {
 
   // ── Bottom bar handlers ──
   // Save — navigate nahi karta
-  const handleSaveDraft = useCallback(() => {
-    // TODO: AsyncStorage / backend me persist karo
-    savedSnapshotRef.current = JSON.stringify(selectedProducts);
-    Alert.alert(
-      'Draft Save Ho Gaya! ✅',
-      `${selectedCount} items save ho gaye.`,
-    );
-  }, [selectedProducts, selectedCount]);
+  const handleSaveDraft = useCallback(async () => {
+    if (selectedCount === 0) {
+      Alert.alert('Koi item nahi', 'Pehle kuch items chuno, phir save karo.');
+      return;
+    }
+    try {
+      await save(Object.values(selectedProducts), 'draft');
+      savedSnapshotRef.current = JSON.stringify(selectedProducts);
+      Alert.alert(
+        'Draft Save Ho Gaya! ✅',
+        `${selectedCount} items save ho gaye.`,
+      );
+    } catch {
+      Alert.alert('List save nahi hui', 'Internet check karke dobara try karein.');
+    }
+  }, [selectedProducts, selectedCount, save]);
 
-  // Continue — flow me aage (List screen)
-  const handleContinue = useCallback(() => {
+  // Continue — pehle list save, phir List screen (real list id ke saath)
+  const handleContinue = useCallback(async () => {
     if (selectedCount === 0) return;
-    savedSnapshotRef.current = JSON.stringify(selectedProducts);
-    navigation.navigate('List', {
-      listId: route.params?.listId,
-      listName,
-      description: route.params?.description,
-      items: Object.values(selectedProducts),
-    });
+    try {
+      const id = await save(Object.values(selectedProducts), 'draft');
+      savedSnapshotRef.current = JSON.stringify(selectedProducts);
+      navigation.navigate('List', {
+        listId: id,
+        listName,
+        description: route.params?.description,
+        items: Object.values(selectedProducts),
+      });
+    } catch {
+      Alert.alert('List save nahi hui', 'Internet check karke dobara try karein.');
+    }
   }, [
     selectedCount,
     selectedProducts,
     navigation,
-    route.params?.listId,
     route.params?.description,
     listName,
+    save,
   ]);
 
 

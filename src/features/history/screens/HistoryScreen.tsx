@@ -17,6 +17,7 @@ import AppHeader from '../../../shared/components/headers/AppHeader';
 import SearchBar from '../../../shared/components/searchBar/SearchBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
 import { useTheme } from '../../../app/providers/ThemeProvider';
+import { goToNewList } from '../../../shared/utils/navHelpers';
 import { useLists } from '../../savedLists/hooks/useLists';
 import { toHistorySections } from '../../savedLists/utils/listMappers';
 import { HistoryItem, HistorySection } from '../../../Data/types';
@@ -53,11 +54,7 @@ const HistoryScreen = () => {
   }, [historySections, searchQuery]);
 
   const handleReuse = (item: HistoryItem) => {
-    navigation.navigate('CreateListScreen', {
-      listName: item.name,
-      startDate: new Date().toISOString(),
-      sourceId: item.id,
-    });
+    goToNewList(navigation, { sourceId: item.id, sourceName: item.name });
   };
 
   const renderHistoryCard = ({ item }: { item: HistoryItem }) => (
