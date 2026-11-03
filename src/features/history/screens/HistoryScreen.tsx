@@ -17,7 +17,8 @@ import AppHeader from '../../../shared/components/headers/AppHeader';
 import SearchBar from '../../../shared/components/searchBar/SearchBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { HISTORY_SECTIONS } from '../../../Data/DummyData';
+import { useLists } from '../../savedLists/hooks/useLists';
+import { toHistorySections } from '../../savedLists/utils/listMappers';
 import { HistoryItem, HistorySection } from '../../../Data/types';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 
@@ -33,11 +34,15 @@ const HistoryScreen = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
 
+  // History = completed lists (Supabase se), mahine ke hisaab se
+  const { completed, loading, error, refresh } = useLists();
+  const historySections = useMemo(() => toHistorySections(completed), [completed]);
+
   // Search ke hisaab se sections filter (khali sections hata do)
   const filteredHistory = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
 
-    return HISTORY_SECTIONS.map(section => ({
+    return historySections.map(section => ({
       ...section,
       data: section.data.filter(
         item =>
@@ -45,7 +50,7 @@ const HistoryScreen = () => {
           item.preview.toLowerCase().includes(q),
       ),
     })).filter(section => section.data.length > 0);
-  }, [searchQuery]);
+  }, [historySections, searchQuery]);
 
   const handleReuse = (item: HistoryItem) => {
     navigation.navigate('CreateListScreen', {
@@ -135,7 +140,22 @@ const HistoryScreen = () => {
         stickySectionHeadersEnabled
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        refreshing={loading && historySections.length > 0}
+        onRefresh={refresh}
         ListEmptyComponent={
+          loading ? (
+            <EmptyState
+              icon="timer-sand"
+              title="Loading..."
+              subtitle="History la rahe hain."
+            />
+          ) : error ? (
+            <EmptyState
+              icon="cloud-off-outline"
+              title="History load nahi hui"
+              subtitle="Internet check karke neeche kheench kar dobara try karein."
+            />
+          ) : (
           <EmptyState
             icon="clipboard-text-off-outline"
             title={searchQuery.trim() ? 'No Results Found' : 'No History Yet'}
@@ -145,6 +165,7 @@ const HistoryScreen = () => {
                 : 'Your completed lists will appear here. Re-use them anytime!'
             }
           />
+          )
         }
       />
     </SafeAreaView>

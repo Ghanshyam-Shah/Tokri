@@ -35,7 +35,8 @@ import ListSheet, { SheetView } from '../../list/components/ListSheet';
 import { Product, SelectedProduct } from '../../../Data/types';
 import { useCatalog } from '../../catalog/hooks/useCatalog';
 import CatalogListEmpty from '../../catalog/components/CatalogListEmpty';
-import { buildSelectedFromCatalog } from '../../../shared/utils/prefillFromSource';
+import { buildSelectedFromItems } from '../../../shared/utils/prefillFromSource';
+import { fetchListItems, isUuid } from '../../savedLists/services/listsService';
 
 // ─── Nav types ────────────────────────────────────────────────────────────────
 type RouteProps = RouteProp<AppStackParamList, 'CreateListScreen'>;
@@ -347,17 +348,28 @@ const CreateListScreen: React.FC = () => {
     return unsubscribe;
   }, [navigation, selectedProducts]);
 
-  // Pre-fill (sourceId): catalog aate hi ek baar. Snapshot bhi usi ka, taaki jab tak
-  // user kuch na badle "List save nahi hui" alert na aaye.
-  const sourceId = route.params?.sourceId;
+  // Pre-fill: catalog aate hi ek baar. Snapshot bhi usi ka, taaki jab tak user
+  // kuch na badle "List save nahi hui" na aaye.
+  //   listId   -> saved list KHOLI hai (wahi list update hogi)
+  //   sourceId -> Old List / Template / History se REUSE (nayi list banegi)
+  const fromId = route.params?.listId ?? route.params?.sourceId;
   const prefilledRef = useRef(false);
   useEffect(() => {
-    if (!sourceId || prefilledRef.current || products.length === 0) return;
+    if (!fromId || prefilledRef.current || products.length === 0) return;
     prefilledRef.current = true;
-    const prefilled = buildSelectedFromCatalog(sourceId, products);
-    savedSnapshotRef.current = JSON.stringify(prefilled);
-    setSelectedProducts(prefilled);
-  }, [sourceId, products]);
+
+    const apply = (sel: Record<string, SelectedProduct>) => {
+      savedSnapshotRef.current = JSON.stringify(sel);
+      setSelectedProducts(sel);
+    };
+
+    if (!isUuid(fromId)) return;
+    fetchListItems(fromId)
+      .then(items => apply(buildSelectedFromItems(items, products)))
+      .catch(() =>
+        Alert.alert('List load nahi hui', 'Internet check karke dobara kholein.'),
+      );
+  }, [fromId, products]);
 
   // ── Filter ──
   const filteredProducts = useMemo(() => {

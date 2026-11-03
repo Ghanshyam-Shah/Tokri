@@ -1,56 +1,37 @@
-
-/**
- * Builds selected products from a source list, template, or history entry.
- *
- * Source items currently use dummy product IDs, while the catalog uses
- * real product IDs from Supabase. Products are matched by name until
- * source lists are migrated to use real catalog product IDs.
- *
- * TODO: Remove this helper once lists, templates, and history use
- * real catalog product IDs.
- */
+// src/shared/utils/prefillFromSource.ts
+//
+// Saved list (Supabase) ke items ko CreateListScreen ke selection me badalna.
 
 import { Product, SelectedProduct } from '../../Data/types';
-import {
-  PRODUCTS as DUMMY_PRODUCTS,
-  SOURCE_ITEMS,
-} from '../../Data/DummyData';
+import { ListItemParam } from '../../navigation/types/navigationTypes';
 
-export const buildSelectedFromCatalog = (
-  sourceId: string | undefined,
+/**
+ * Supabase me saved list ke items -> CreateListScreen ka selection.
+ * Product ab bhi catalog me hai to wahi use hota hai (taaki card "selected" dikhe),
+ * hata diya gaya ho to list me save hui snapshot se bana dete hain.
+ */
+export const buildSelectedFromItems = (
+  items: ListItemParam[],
   catalog: Product[],
 ): Record<string, SelectedProduct> => {
-  const selectedProducts: Record<string, SelectedProduct> = {};
-
-  if (!sourceId) {
-    return selectedProducts;
-  }
-
-  const sourceItems = SOURCE_ITEMS[sourceId] ?? [];
-
-  sourceItems.forEach(({ productId, quantity, note }) => {
-    const dummyProduct = DUMMY_PRODUCTS.find(
-      product => product.id === productId,
-    );
-
-    if (!dummyProduct) {
-      return;
-    }
-
-    const catalogProduct = catalog.find(
-      product => product.name === dummyProduct.name,
-    );
-
-    if (!catalogProduct) {
-      return;
-    }
-
-    selectedProducts[catalogProduct.id] = {
-      ...catalogProduct,
-      quantity,
-      note,
-    };
+  const result: Record<string, SelectedProduct> = {};
+  items.forEach(it => {
+    const real = catalog.find(p => p.id === it.id);
+    result[it.id] = real
+      ? { ...real, quantity: it.quantity, note: it.note }
+      : {
+          id: it.id,
+          name: it.name,
+          nameHindi: it.nameHindi,
+          categoryId: it.categoryId ?? '',
+          unit: it.unit,
+          price: 0,
+          imageUrl: it.imageUrl,
+          isTopPick: false,
+          createdAt: 0,
+          quantity: it.quantity,
+          note: it.note,
+        };
   });
-
-  return selectedProducts;
+  return result;
 };

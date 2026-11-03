@@ -96,7 +96,7 @@ const DrawerNavigator = () => {
         options={{
           drawerLabel: 'Home',
           drawerIcon: ({ color }) => (
-            <AntDesign name="home" size={22} color={color} />
+            <Ionicons name="home-outline" size={22} color={color} />
           ),
         }}
       />

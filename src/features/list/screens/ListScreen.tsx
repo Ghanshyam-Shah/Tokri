@@ -1,6 +1,8 @@
 
 import React, { useMemo, useState, } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../../../shared/components/headers/AppHeader';
@@ -8,10 +10,17 @@ import { useTheme } from '../../../app/providers/ThemeProvider';
 import CollapsibleFilterBar from '../../../shared/components/filterBar/CollapsibleFilterBar';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import EmptyState from '../../../shared/components/states/EmptyState';
-import { SAVED_LISTS, LIST_FILTERS } from '../../../Data/DummyData';
+import { LIST_FILTERS } from '../../../Data/DummyData';
 import { SavedList } from '../../../Data/types';
+import { AppStackParamList } from '../../../navigation/types/navigationTypes';
+import { useAppDispatch } from '../../../app/store/hooks';
+import { useLists } from '../../savedLists/hooks/useLists';
+import { toSavedList } from '../../savedLists/utils/listMappers';
+import { loadLists } from '../../savedLists/store/listsSlice';
+import { deleteList, saveAsTemplate } from '../../savedLists/services/listsService';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
+type NavProp = NativeStackNavigationProp<AppStackParamList>;
 
 // ─── Main Component ─────────────────────────────────────────────────────
 
@@ -19,6 +28,12 @@ const ListScreen = () => {
   const { theme } = useTheme();
   const { colors } = theme;
   const styles = useMemo(() => createStyles(theme), [theme]);
+  const navigation = useNavigation<NavProp>();
+  const dispatch = useAppDispatch();
+
+  // Saved lists Supabase se (templates yahan nahi dikhte)
+  const { all, loading, error, refresh } = useLists();
+  const savedLists = useMemo(() => all.map(toSavedList), [all]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -28,7 +43,7 @@ const ListScreen = () => {
   const filteredLists = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
-    return SAVED_LISTS.filter(list => {
+    return savedLists.filter(list => {
       const categoryMatches =
         activeFilter === 'all' ||
         (activeFilter === 'Drafts'
@@ -44,7 +59,7 @@ const ListScreen = () => {
 
       return categoryMatches && searchMatches;
     });
-  }, [searchQuery, activeFilter]);
+  }, [savedLists, searchQuery, activeFilter]);
 
   // Catalog jaisa collapsible search + chips bar
   const { barHeight, barTranslateY, onBarLayout, handleScroll } =
@@ -56,13 +71,70 @@ const ListScreen = () => {
       ? "You haven't created any shopping lists yet."
       : `No lists found for '${activeFilter}'.`;
 
+  // Tap: list kholo (wahi list update hoti hai)
+  const openList = (id: string) => {
+    const row = all.find(r => r.id === id);
+    if (!row) return;
+    navigation.navigate('CreateListScreen', {
+      listId: row.id,
+      listName: row.name,
+      description: row.description || undefined,
+      listType: row.listType,
+      startDate: row.startDate ?? undefined,
+    });
+  };
+
+  // Lamba dabao: template banao / delete
+  const openMenu = (item: SavedList) => {
+    Alert.alert(item.name, undefined, [
+      {
+        text: 'Save as template',
+        onPress: async () => {
+          try {
+            await saveAsTemplate(item.id);
+            dispatch(loadLists());
+            Alert.alert('Template save ho gaya ✅', 'New List → My Templates me milega.');
+          } catch {
+            Alert.alert('Template save nahi hua', 'Internet check karke dobara try karein.');
+          }
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('List delete karein?', `"${item.name}" hamesha ke liye hat jayegi.`, [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await deleteList(item.id);
+                  dispatch(loadLists());
+                } catch {
+                  Alert.alert('Delete nahi hui', 'Dobara try karein.');
+                }
+              },
+            },
+          ]),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const renderListCard = ({ item }: { item: SavedList }) => {
     const isDraft = item.status === 'Draft';
 
 
 
     return (
-      <TouchableOpacity activeOpacity={0.85} style={styles.card}>
+      <TouchableOpacity
+        activeOpacity={0.85}
+        style={styles.card}
+        onPress={() => openList(item.id)}
+        onLongPress={() => openMenu(item)}
+      >
         <View style={styles.cardIconWrap}>
           <Icon
             name={
@@ -149,12 +221,29 @@ const ListScreen = () => {
             },
           ]}
           showsVerticalScrollIndicator={false}
+          refreshing={loading && savedLists.length > 0}
+          onRefresh={refresh}
+          progressViewOffset={barHeight}
           ListEmptyComponent={
-            <EmptyState
-              icon="basket-off-outline"
-              title="No Lists Found"
-              subtitle={emptySubtitle}
-            />
+            loading ? (
+              <EmptyState
+                icon="timer-sand"
+                title="Loading..."
+                subtitle="Aapki lists la rahe hain."
+              />
+            ) : error ? (
+              <EmptyState
+                icon="cloud-off-outline"
+                title="Lists load nahi huin"
+                subtitle="Internet check karke neeche kheench kar dobara try karein."
+              />
+            ) : (
+              <EmptyState
+                icon="basket-off-outline"
+                title="No Lists Found"
+                subtitle={emptySubtitle}
+              />
+            )
           }
           onScroll={handleScroll}
           scrollEventThrottle={16}

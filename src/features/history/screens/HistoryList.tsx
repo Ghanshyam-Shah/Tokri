@@ -2,7 +2,7 @@
 //
 // History ki ek purani list ka read-only view. Neeche sirf "Reuse list" button.
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
@@ -16,7 +16,8 @@ import EmptyState from '../../../shared/components/states/EmptyState';
 import ListItemRow from '../../../shared/components/product/ListItemRow';
 import { useCollapsibleBar } from '../../../shared/hooks/useCollapsibleBar';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { CATEGORIES, buildSelectedFromSource } from '../../../Data/DummyData';
+import { CATEGORIES } from '../../../Data/DummyData';
+import { fetchListItems } from '../../savedLists/services/listsService';
 import { SelectedProduct } from '../../../Data/types';
 import { borderRadius } from '../../../theme';
 
@@ -34,11 +35,39 @@ const HistoryList: React.FC = () => {
 
   const { listId, listName } = route.params;
 
-  // History entry ke items (SOURCE_ITEMS se)
-  const items = useMemo(
-    () => Object.values(buildSelectedFromSource(listId)),
-    [listId],
-  );
+  // History entry ke items (Supabase se)
+  const [items, setItems] = useState<SelectedProduct[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    fetchListItems(listId)
+      .then(rows => {
+        if (!alive) return;
+        setItems(
+          rows.map(
+            r =>
+              ({
+                id: r.id,
+                name: r.name,
+                nameHindi: r.nameHindi,
+                categoryId: r.categoryId ?? '',
+                unit: r.unit,
+                price: 0,
+                imageUrl: r.imageUrl,
+                isTopPick: false,
+                createdAt: 0,
+                quantity: r.quantity,
+                note: r.note,
+              } as SelectedProduct),
+          ),
+        );
+      })
+      .catch(() => {})
+      .finally(() => alive && setLoadingItems(false));
+    return () => {
+      alive = false;
+    };
+  }, [listId]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -71,7 +100,7 @@ const HistoryList: React.FC = () => {
     [],
   );
 
-  const noItems = items.length === 0;
+  const noItems = !loadingItems && items.length === 0;
 
   return (
     <View style={s.root}>
@@ -109,7 +138,13 @@ const HistoryList: React.FC = () => {
             ListEmptyComponent={
               <EmptyState
                 icon="basket-off-outline"
-                title={noItems ? 'No items in this list' : 'Nothing found'}
+                title={
+                  loadingItems
+                    ? 'Loading...'
+                    : noItems
+                      ? 'No items in this list'
+                      : 'Nothing found'
+                }
                 subtitle={
                   noItems
                     ? 'This list has no saved items.'

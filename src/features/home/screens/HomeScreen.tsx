@@ -19,8 +19,13 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppHeader from '../../../shared/components/headers/AppHeader';
 import { useTheme } from '../../../app/providers/ThemeProvider';
 import { useAppSelector } from '../../../app/store/hooks';
-import { ACTIVE_LISTS, HISTORY_SECTIONS } from '../../../Data/DummyData';
-import { ActiveList, HistoryItem } from '../../../Data/types';
+import { HistoryItem } from '../../../Data/types';
+import { useLists } from '../../savedLists/hooks/useLists';
+import { ListRow } from '../../savedLists/services/listsService';
+import {
+  formatListDate,
+  toHistorySections,
+} from '../../savedLists/utils/listMappers';
 
 type Theme = ReturnType<typeof useTheme>['theme'];
 
@@ -302,19 +307,24 @@ const HomeScreen: React.FC = () => {
 
   const firstName = user?.name?.trim().split(' ')[0] || 'there';
 
-  const itemsLeft = ACTIVE_LISTS.reduce((n, l) => n + (l.total - l.bought), 0);
-  const recentHistory: HistoryItem[] = HISTORY_SECTIONS.flatMap(
-    sec => sec.data,
-  ).slice(0, 2);
+  // Active lists = draft lists, Recent history = latest 2 completed (Supabase se)
+  const { drafts, completed } = useLists();
+  const totalItems = drafts.reduce((n, l) => n + l.itemCount, 0);
+  const recentHistory: HistoryItem[] = useMemo(
+    () => toHistorySections(completed).flatMap(sec => sec.data).slice(0, 2),
+    [completed],
+  );
 
   // ── navigation ──
   const goCreate = () => navigation.navigate('CreateTab');
-  const openList = (l: ActiveList) =>
+  // Draft list kholo: wahi list update hoti hai
+  const openList = (l: ListRow) =>
     navigation.navigate('CreateListScreen', {
       listId: l.id,
       listName: l.name,
-      startDate: new Date().toISOString(),
-      sourceId: l.sourceId,
+      description: l.description || undefined,
+      listType: l.listType,
+      startDate: l.startDate ?? undefined,
     });
   const reuse = (h: HistoryItem) =>
     navigation.navigate('CreateListScreen', {
@@ -337,7 +347,7 @@ const HomeScreen: React.FC = () => {
             <Text style={s.greetSmall}>{greeting()}</Text>
             <Text style={s.greetName}>{firstName}</Text>
             <Text style={s.greetSummary}>
-              {ACTIVE_LISTS.length} active lists · {itemsLeft} items left to buy
+              {drafts.length} active lists · {totalItems} items to buy
             </Text>
           </View>
           <View style={s.avatar}>
@@ -400,7 +410,12 @@ const HomeScreen: React.FC = () => {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={s.listsContent}
           >
-            {ACTIVE_LISTS.map(l => (
+            {drafts.length === 0 && (
+              <Text style={[s.listMeta, { paddingHorizontal: H_PADDING }]}>
+                No any active list. Create new list.
+              </Text>
+            )}
+            {drafts.map(l => (
               <TouchableOpacity
                 key={l.id}
                 style={s.listCard}
@@ -410,18 +425,8 @@ const HomeScreen: React.FC = () => {
                 <Text style={s.listName} numberOfLines={1}>
                   {l.name}
                 </Text>
-                <Text style={s.listMeta}>
-                  {l.bought} of {l.total} bought
-                </Text>
-                <View style={s.track}>
-                  <View
-                    style={[
-                      s.fill,
-                      { width: `${Math.round((l.bought / l.total) * 100)}%` },
-                    ]}
-                  />
-                </View>
-                <Text style={s.due}>{l.due}</Text>
+                <Text style={s.listMeta}>{l.itemCount} items</Text>
+                <Text style={s.due}>{formatListDate(l.createdAt)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -435,6 +440,11 @@ const HomeScreen: React.FC = () => {
             onSeeAll={() => navigation.navigate('HistoryTab')}
           />
           <View style={s.historyList}>
+            {recentHistory.length === 0 && (
+              <Text style={s.historyMeta}>
+                Complete ki hui lists yahan dikhengi.
+              </Text>
+            )}
             {recentHistory.map(h => (
               <View key={h.id} style={s.historyRow}>
                 <View style={s.historyIcon}>

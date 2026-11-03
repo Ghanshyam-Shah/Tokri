@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from '../../features/auth/store/authSlice';
 import catalogReducer from '../../features/catalog/store/catalogSlice';
+import listsReducer from '../../features/savedLists/store/listsSlice';
 // reducer: { ... } ke andar:
 
 
@@ -10,6 +11,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     catalog: catalogReducer,
+    lists: listsReducer,
   },
 });
 

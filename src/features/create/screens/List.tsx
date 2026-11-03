@@ -37,6 +37,7 @@ import ExportBar from '../components/list/ExportBar';
 import DownloadSheet from '../components/list/DownloadSheet';
 import ExportImageView from '../components/list/ExportImageView';
 import { useListExport } from '../hooks/useListExport';
+import { useSaveList } from '../hooks/useSaveList';
 import { useCollapsibleBar } from '../hooks/useCollapsibleBar';
 import {
   H_PADDING,
@@ -189,19 +190,60 @@ const List: React.FC = () => {
     handleDelete(id);
   }, [editingId, handleDelete]);
 
-  const handleSaveDraft = useCallback(() => {
-    // TODO: `items` ko AsyncStorage / backend me persist karo
-    Alert.alert('Draft Save Ho Gaya! ✅', `${itemCount} items save ho gaye.`);
-  }, [itemCount]);
+  // Save: pehli baar list ban jati hai, baad me wahi update hoti hai
+  const { save } = useSaveList({
+    listId: route.params?.listId,
+    listName,
+    description,
+  });
+
+  const handleSaveDraft = useCallback(async () => {
+    try {
+      await save(itemList, 'draft');
+      Alert.alert('Draft Save Ho Gaya! ✅', `${itemCount} items save ho gaye.`);
+    } catch {
+      Alert.alert('List save nahi hui', 'Internet check karke dobara try karein.');
+    }
+  }, [save, itemList, itemCount]);
 
   // ── export (share / PDF / image) ──
   const captureRef = useRef<React.ComponentRef<typeof ViewShot>>(null);
-  const { handleShare, handleSaveAsPDF, handleSaveAsImage } = useListExport({
+  const {
+    handleShare: exportShare,
+    handleSaveAsPDF: exportPDF,
+    handleSaveAsImage: exportImage,
+  } = useListExport({
     items: itemList,
     listName,
     description,
     captureRef,
   });
+
+  // Share / download = list COMPLETE. Pehle save, phir export.
+  // Save fail ho to export phir bhi chalta hai, bas baad me bata dete hain.
+  const completeThen = useCallback(
+    (exportFn: () => Promise<void>) => async () => {
+      if (itemList.length === 0) return;
+      let saved = true;
+      try {
+        await save(itemList, 'completed');
+      } catch {
+        saved = false;
+      }
+      await exportFn();
+      if (!saved) {
+        Alert.alert(
+          'List save nahi hui',
+          'Export ho gaya, par list save nahi ho payi. "Save as draft" se dobara try karein.',
+        );
+      }
+    },
+    [save, itemList],
+  );
+
+  const handleShare = useMemo(() => completeThen(exportShare), [completeThen, exportShare]);
+  const handleSaveAsPDF = useMemo(() => completeThen(exportPDF), [completeThen, exportPDF]);
+  const handleSaveAsImage = useMemo(() => completeThen(exportImage), [completeThen, exportImage]);
 
   // ── Download sheet ──
   const [downloadVisible, setDownloadVisible] = useState(false);

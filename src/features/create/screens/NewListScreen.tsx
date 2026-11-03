@@ -24,9 +24,10 @@ import SegmentedTabs, {
 } from '../../../shared/components/tabs/SegmentedTabs';
 import { AppStackParamList } from '../../../navigation/types/navigationTypes';
 import AppHeader from '../../../shared/components/headers/AppHeader';
-import SectionLabel from '../../../shared/components/form/SectionLabel';
 import { useTheme } from '../../../app/providers/ThemeProvider';
-import { LIST_TYPES, OLD_LISTS, MY_TEMPLATES } from '../../../Data/DummyData';
+import { LIST_TYPES } from '../../../Data/DummyData';
+import { useLists } from '../../savedLists/hooks/useLists';
+import { toListSource } from '../../savedLists/utils/listMappers';
 import { ListType, ListSource } from '../../../Data/types';
 
 // ─── Navigation type ──────────────────────────────────────────────────────────
@@ -40,11 +41,6 @@ const SOURCE_TABS: SegmentTab[] = [
   { id: 'old', label: 'Old Lists', icon: 'history' },
   { id: 'templates', label: 'My Templates', icon: 'bookmark-outline' },
 ];
-
-const SOURCES: Record<SourceTab, ListSource[]> = {
-  old: OLD_LISTS,
-  templates: MY_TEMPLATES,
-};
 
 const EMPTY_TEXT: Record<SourceTab, string> = {
   old: 'Abhi koi purani list nahi hai.',
@@ -66,6 +62,53 @@ const isToday = (d: Date) => {
 };
 
 
+
+// ─── SectionLabel ─────────────────────────────────────────────────────────────
+const SectionLabel = React.memo(
+  ({ icon, en, hi }: { icon: string; en: string; hi: string }) => {
+    const { theme } = useTheme();
+    const { colors, typography, fontFamilies, spacing } = theme;
+
+    const sec = useMemo(
+      () =>
+        StyleSheet.create({
+          row: {
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: spacing.xs + 2,
+            marginBottom: spacing.md + 2,
+          },
+          en: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.bold,
+            color: colors.primary,
+            letterSpacing: 0.8,
+          },
+          slash: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.regular,
+            color: colors.textMuted,
+            opacity: 0.5,
+          },
+          hi: {
+            fontSize: typography.xs,
+            fontFamily: fontFamilies.semiBold,
+            color: colors.primary,
+          },
+        }),
+      [colors, typography, fontFamilies, spacing],
+    );
+
+    return (
+      <View style={sec.row}>
+        <Icon name={icon} size={14} color={colors.primary} />
+        <Text style={sec.en}>{en}</Text>
+
+        <Text style={sec.hi}>{hi}</Text>
+      </View>
+    );
+  },
+);
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const NewListScreen: React.FC = () => {
@@ -89,6 +132,15 @@ const NewListScreen: React.FC = () => {
   const [sourceTab, setSourceTab] = useState<SourceTab>('old');
   const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
 
+  // Old Lists = completed lists, Templates = save kiye hue templates (Supabase se)
+  const { completed, templates } = useLists();
+  const SOURCES = useMemo<Record<SourceTab, ListSource[]>>(
+    () => ({
+      old: completed.slice(0, 10).map(r => toListSource(r)),
+      templates: templates.map(r => toListSource(r, 'Mera template')),
+    }),
+    [completed, templates],
+  );
   const sourceItems = SOURCES[sourceTab];
 
   // ── Handlers ──
