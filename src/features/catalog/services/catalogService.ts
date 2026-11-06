@@ -6,7 +6,7 @@
 // Screens ko DB ke column names nahi dikhte: yahan `Product` / `Category` type me badal dete hain.
 
 import { supabase, ensureSession } from '../../../lib/supabase';
-import { Product, Category } from '../../../../../Data/types';
+import { Product, Category } from '../../../Data/types';
 
 // Product + ye pata ki wo default hai ya user ka, aur uska override row (agar hai)
 export interface CatalogProduct extends Product {

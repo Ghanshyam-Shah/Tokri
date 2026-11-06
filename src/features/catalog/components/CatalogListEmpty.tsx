@@ -17,7 +17,10 @@ const CatalogListEmpty = ({ loading, error }: Props) => {
   if (loading) {
     return (
       <View style={{ paddingVertical: theme.spacing.giant, alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <ActivityIndicator 
+          size="large"
+          color={theme.colors.primary}
+        />
       </View>
     );
   }
